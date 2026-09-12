@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "23011584622",
+    "project_id": "all-one-fa936",
+    "storage_bucket": "all-one-fa936.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:23011584622:android:a304e9bb023a025bb9d47f",
+        "android_client_info": {
+          "package_name": "com.nhallone.all_one"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "23011584622-8ghv3klsv39vf32ol3g3g4lmqc921ftu.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBW7kmIhYWtZoIRfvN0QK22vUACDzbdYMQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "23011584622-8ghv3klsv39vf32ol3g3g4lmqc921ftu.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "23011584622-ri39ktk70kl970rfliivf1k43h16oa5e.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.nhallone.allOne"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
