@@ -19,6 +19,7 @@ This is the persistent starting context for a new development session. Read it a
 Native platform launch
   → screen 6: campaign splash
   → screen 7: NH certificate login
+  → white PIN-header loading state with certificate-specific badge animation
   → screen 8: six-digit PIN
   → dimmed certificate/Home transition with original loading animation
   → Home
@@ -28,8 +29,8 @@ Native platform launch
 - iOS native launch uses screen 6 artwork through `ios/Runner/Base.lproj/LaunchScreen.storyboard` and `LaunchImage.imageset`.
 - Android 12+ necessarily shows the system splash with the app icon first; Flutter screen 6 follows it. Do not try to remove the Android 12 system splash.
 - Screen 6 is implemented by `SplashScreen` with `assets/images/entry_6_splash.png`.
-- Screen 7 is implemented by `CertificateLoginScreen` with `assets/images/entry_7_certificate.png` and invisible semantic tap targets aligned to the reference.
-- Screen 8 is implemented by `PinScreen` with `assets/images/entry_8_pin.png` plus native interactive PIN dots/keypad.
+- Screen 7 is implemented by `CertificateLoginScreen` with `assets/images/entry_7_certificate.png`. It continues automatically after 750 ms; the visible Login button has no tap target. Opening an alternate-login sheet cancels the automatic timer.
+- Screen 8 is implemented by `PinScreen` with `assets/images/entry_8_pin.png` plus native interactive PIN dots/keypad. When entered from screen 7, it first shows the reference header with the certificate-specific badge APNG for 600 ms, then reveals the dots and keypad. The top-right close `X` and its action are intentionally removed.
 - The certificate screen has an explicit white safe-area overlay (`certificate-status-bar-background`). This is required because Android edge-to-edge may ignore only setting `statusBarColor`; the same safe-area mechanism also covers iOS status bars/notches.
 - Android status-bar behavior has been checked on a Samsung SM-A366B. The iOS code path is shared and structurally covered, but this final status-bar change has not been smoke-tested on a physical iPhone.
 
@@ -45,10 +46,11 @@ Native platform launch
 
 ## Loading transition
 
-- Do not recreate the loading logo with a painter or a generic rotation.
-- `assets/images/loading_original.png` is a transparent 288×288 APNG extracted directly from `mockup/9.mp4`.
-- It contains 20 frames at 50 ms per frame and loops continuously. The source crop was upscaled with high-quality interpolation and the uniform video background was removed.
-- `lib/ui/app_loading_transition.dart` displays it at 84 logical pixels over a `0x73000000` scrim.
+- The certificate→PIN and PIN→Home loaders are intentionally different assets; do not substitute one for the other or recreate either with a painter.
+- `assets/images/loading_certificate_to_pin.png` is a 288×288, 36-frame APNG running at the source video's 59.975 fps for about 600 ms. It applies frame-by-frame image-registration transforms measured from `video_2026-09-12_15-24-41.mp4` to the sharp, clean-edged badge, preserving the subtle twist/scale movement without restoring the earlier blur or dark outline. `PinScreen` displays it at 72 logical pixels; this applies the measured 0.85 size ratio between the supplied references (`2.jpg`: 102 px, `1.jpg`: 120 px).
+- The certificate loader reproduces the source cadence: visible from source time 1.550–1.667 s, blank for one frame at 1.683 s, visible at 1.700–1.717 s, blank for one frame at 1.733 s, visible again from 1.750–1.883 s, then blank through the end of the 600-ms transition.
+- `assets/images/loading_original.png` is the separate transparent 288×288 APNG extracted directly from `mockup/9.mp4`. It contains 20 frames at 50 ms per frame and loops continuously. The source crop was upscaled with high-quality interpolation and the uniform video background was removed.
+- `lib/ui/app_loading_transition.dart` displays `loading_original.png` at 84 logical pixels over a `0x73000000` scrim.
 - The transition holds on the certificate screen, reveals Home underneath, and then fades to Home.
 - The animated asset has been confirmed running on Samsung SM-A366B. Keep `gaplessPlayback` and high filter quality.
 
@@ -110,14 +112,20 @@ flutter build apk --debug
 
 - Format only changed Dart files with `dart format <files>`.
 - Golden tests use the intentional current visual baseline. Never update goldens just to silence a mismatch.
-- Widget coverage includes entry 6, white certificate status bar, 7→8→loading→Home, PIN close/shuffle/dot alignment, fixed Home chrome, large-text account-card bounds, and Korean login/register sheets.
-- The loading test validates the APNG as 20 frames, 50 ms first-frame duration, 288×288.
-- Latest verification on 2026-09-12:
+- Widget coverage includes entry 6, white certificate status bar, automatic 7→PIN loading→8→loading→Home, absence of the certificate Login tap target and PIN close control, PIN shuffle/dot alignment, fixed Home chrome, large-text account-card bounds, and Korean login/register sheets.
+- Loading tests validate the separate APNGs: certificate→PIN is 36 frames using a repeating 17/17/16-ms cadence for an exact 600-ms total, and PIN→Home is 20 frames at 50 ms per frame; both are 288×288.
+- Latest verification after the certificate/PIN transition correction on 2026-09-12:
   - `flutter analyze`: no issues.
-  - `flutter test test/widget_test.dart`: 11 passed.
+  - `flutter test test/widget_test.dart`: 12 passed.
   - `flutter test test/preview_golden_test.dart`: 2 passed.
-  - Android debug APK built successfully.
-  - Samsung SM-A366B smoke test: white certificate status bar, large-text Home without overflow, loading animation, navigation to Home, and no Flutter/Android runtime errors.
+- Latest verification after reproducing the source-video certificate-loader motion on 2026-09-12:
+  - `flutter analyze`: no issues.
+  - `flutter test test/widget_test.dart`: 12 passed, including checks for all 36 frame durations, the exact blink-frame pattern, the 600-ms total, and the 72×72 logical-pixel loader size.
+  - `flutter test test/preview_golden_test.dart`: 2 passed.
+- Platform verification after the certificate/PIN transition correction on 2026-09-12:
+  - The current Android debug APK with the sharpened, clean-edged, source-motion certificate loader and removed PIN close control built, installed, and launched successfully on Samsung SM-A366B over wireless ADB.
+  - The first frame rendered with no Dart/Flutter exception during launch. Flutter detached while leaving the app process running for manual visual verification.
+  - An earlier smoke test on the same device covered the white certificate status bar, large-text Home without overflow, loading animation, and navigation to Home.
 
 ## Known limits and next-session checklist
 

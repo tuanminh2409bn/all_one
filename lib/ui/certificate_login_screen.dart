@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -9,33 +11,52 @@ import 'entry_reference_canvas.dart';
 import 'pin_screen.dart';
 
 class CertificateLoginScreen extends StatefulWidget {
-  const CertificateLoginScreen({super.key, required this.auth});
+  const CertificateLoginScreen({
+    super.key,
+    required this.auth,
+    this.autoContinue = true,
+  });
 
   final AuthService auth;
+  final bool autoContinue;
 
   @override
   State<CertificateLoginScreen> createState() => _CertificateLoginScreenState();
 }
 
 class _CertificateLoginScreenState extends State<CertificateLoginScreen> {
+  static const _autoContinueDelay = Duration(milliseconds: 750);
+
+  Timer? _autoContinueTimer;
   bool _openingPin = false;
 
   @override
   void initState() {
     super.initState();
     showDeviceStatusBar(darkIcons: true, backgroundColor: Colors.white);
+    if (widget.autoContinue) {
+      _autoContinueTimer = Timer(
+        _autoContinueDelay,
+        () => unawaited(_openPin()),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _autoContinueTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _openPin() async {
-    if (_openingPin) return;
+    if (!mounted || _openingPin) return;
+    _autoContinueTimer?.cancel();
     setState(() => _openingPin = true);
     await Navigator.of(context).push<void>(
       PageRouteBuilder<void>(
         transitionDuration: const Duration(milliseconds: 220),
-        pageBuilder: (routeContext, animation, secondaryAnimation) => PinScreen(
-          auth: widget.auth,
-          onClose: () => Navigator.of(routeContext).pop(),
-        ),
+        pageBuilder: (_, _, _) =>
+            PinScreen(auth: widget.auth, showEntryLoading: true),
         transitionsBuilder: (_, animation, secondaryAnimation, child) =>
             FadeTransition(opacity: animation, child: child),
       ),
@@ -47,6 +68,7 @@ class _CertificateLoginScreenState extends State<CertificateLoginScreen> {
   }
 
   Future<void> _changeLoginMethod() async {
+    _autoContinueTimer?.cancel();
     final authenticated = await showAuthSheet(context, auth: widget.auth);
     if (!authenticated || !mounted) return;
     await initializeUserData(widget.auth);
@@ -73,17 +95,6 @@ class _CertificateLoginScreenState extends State<CertificateLoginScreen> {
               backgroundColor: const Color(0xFFF9F8FF),
               child: Stack(
                 children: [
-                  Positioned(
-                    key: const Key('certificate-login-button'),
-                    left: 135,
-                    top: 795,
-                    width: 936,
-                    height: 185,
-                    child: _InvisibleReferenceButton(
-                      semanticsLabel: 'NH인증서 로그인',
-                      onTap: _openPin,
-                    ),
-                  ),
                   Positioned(
                     key: const Key('certificate-change-method'),
                     left: 85,

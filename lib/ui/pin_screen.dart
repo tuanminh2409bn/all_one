@@ -11,10 +11,14 @@ import 'design_canvas.dart';
 import 'entry_reference_canvas.dart';
 
 class PinScreen extends StatefulWidget {
-  const PinScreen({super.key, required this.auth, this.onClose});
+  const PinScreen({
+    super.key,
+    required this.auth,
+    this.showEntryLoading = false,
+  });
 
   final AuthService auth;
-  final VoidCallback? onClose;
+  final bool showEntryLoading;
 
   @override
   State<PinScreen> createState() => _PinScreenState();
@@ -23,6 +27,7 @@ class PinScreen extends StatefulWidget {
 enum _AccessPinMode { loading, legacy, verify, create, confirm }
 
 class _PinScreenState extends State<PinScreen> {
+  static const _entryLoadingDuration = Duration(milliseconds: 600);
   static const _initialKeypadDigits = <int>[4, 7, 2, 6, 8, 5, 3, 9, 0, 1];
   static const _keyCenters = <Offset>[
     Offset(203, 1530),
@@ -49,12 +54,26 @@ class _PinScreenState extends State<PinScreen> {
   bool _busy = false;
   bool _navigating = false;
   bool _keypadWasShuffled = false;
+  Timer? _entryLoadingTimer;
+  late bool _showEntryLoading;
 
   @override
   void initState() {
     super.initState();
+    _showEntryLoading = widget.showEntryLoading;
     showDeviceStatusBar(darkIcons: true, backgroundColor: Colors.white);
     unawaited(_loadPinState());
+    if (_showEntryLoading) {
+      _entryLoadingTimer = Timer(_entryLoadingDuration, () {
+        if (mounted) setState(() => _showEntryLoading = false);
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _entryLoadingTimer?.cancel();
+    super.dispose();
   }
 
   bool get _inputLocked =>
@@ -186,16 +205,6 @@ class _PinScreenState extends State<PinScreen> {
     });
   }
 
-  void _close() {
-    if (_navigating) return;
-    final close = widget.onClose;
-    if (close != null) {
-      close();
-    } else {
-      Navigator.of(context).maybePop();
-    }
-  }
-
   void _openHome() {
     if (!mounted || _navigating) return;
     _navigating = true;
@@ -211,6 +220,7 @@ class _PinScreenState extends State<PinScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final padding = MediaQuery.paddingOf(context);
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.dark.copyWith(
         statusBarColor: Colors.white,
@@ -221,195 +231,246 @@ class _PinScreenState extends State<PinScreen> {
       ),
       child: Scaffold(
         backgroundColor: Colors.white,
-        body: EntryReferenceCanvas(
-          asset: 'assets/images/entry_8_pin.png',
-          backgroundColor: Colors.white,
-          child: Stack(
-            children: [
-              if (_mode == _AccessPinMode.create ||
-                  _mode == _AccessPinMode.confirm)
-                const Positioned(
-                  left: 150,
-                  right: 150,
-                  top: 330,
-                  height: 330,
-                  child: ColoredBox(color: Colors.white),
-                ),
-              if (_mode == _AccessPinMode.create ||
-                  _mode == _AccessPinMode.confirm)
-                Positioned(
-                  left: 120,
-                  right: 120,
-                  top: 385,
-                  height: 260,
-                  child: Column(
-                    children: [
-                      const Text(
-                        'NH인증서',
-                        style: TextStyle(
-                          color: Color(0xFF111111),
-                          fontSize: 70,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: -2.5,
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            EntryReferenceCanvas(
+              asset: 'assets/images/entry_8_pin.png',
+              backgroundColor: Colors.white,
+              child: Stack(
+                children: [
+                  if (_mode == _AccessPinMode.create ||
+                      _mode == _AccessPinMode.confirm)
+                    const Positioned(
+                      left: 150,
+                      right: 150,
+                      top: 330,
+                      height: 330,
+                      child: ColoredBox(color: Colors.white),
+                    ),
+                  if (_mode == _AccessPinMode.create ||
+                      _mode == _AccessPinMode.confirm)
+                    Positioned(
+                      left: 120,
+                      right: 120,
+                      top: 385,
+                      height: 260,
+                      child: Column(
+                        children: [
+                          const Text(
+                            'NH인증서',
+                            style: TextStyle(
+                              color: Color(0xFF111111),
+                              fontSize: 70,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: -2.5,
+                            ),
+                          ),
+                          const SizedBox(height: 42),
+                          Text(
+                            _instruction,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Color(0xFF787878),
+                              fontSize: 45,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: -2,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  const Positioned(
+                    key: Key('pin-close-cover'),
+                    left: 1020,
+                    top: 0,
+                    width: 186,
+                    height: 180,
+                    child: ColoredBox(color: Colors.white),
+                  ),
+                  for (var index = 0; index < _digits.length; index++)
+                    Positioned(
+                      key: Key('app-pin-indicator-$index'),
+                      left: _dotCenters[index] - (_dotDiameter / 2),
+                      top: _dotCenterY - (_dotDiameter / 2),
+                      width: _dotDiameter,
+                      height: _dotDiameter,
+                      child: const DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: Color(0xFF149C4C),
+                          shape: BoxShape.circle,
                         ),
                       ),
-                      const SizedBox(height: 42),
-                      Text(
-                        _instruction,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Color(0xFF787878),
-                          fontSize: 45,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: -2,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              Positioned(
-                key: const Key('pin-close'),
-                left: 1030,
-                top: 22,
-                width: 145,
-                height: 145,
-                child: Semantics(
-                  button: true,
-                  label: '닫기',
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: _close,
-                  ),
-                ),
-              ),
-              for (var index = 0; index < _digits.length; index++)
-                Positioned(
-                  key: Key('app-pin-indicator-$index'),
-                  left: _dotCenters[index] - (_dotDiameter / 2),
-                  top: _dotCenterY - (_dotDiameter / 2),
-                  width: _dotDiameter,
-                  height: _dotDiameter,
-                  child: const DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: Color(0xFF149C4C),
-                      shape: BoxShape.circle,
                     ),
-                  ),
-                ),
-              if (_errorMessage case final message?)
-                Positioned(
-                  key: const Key('app-pin-error'),
-                  left: 120,
-                  right: 120,
-                  top: 785,
-                  height: 90,
-                  child: Center(
-                    child: Text(
-                      message,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Color(0xFFD92D20),
-                        fontSize: 31,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-              if (_mode == _AccessPinMode.verify && _failedAttempts > 0)
-                Positioned(
-                  left: 430,
-                  top: 890,
-                  width: 346,
-                  height: 90,
-                  child: FilledButton(
-                    key: const Key('app-pin-reset'),
-                    onPressed: _busy ? null : _resetPin,
-                    style: FilledButton.styleFrom(
-                      foregroundColor: const Color(0xFF202020),
-                      backgroundColor: const Color(0xFFF1F3F4),
-                      shape: const StadiumBorder(),
-                      elevation: 0,
-                    ),
-                    child: const Text(
-                      '비밀번호 재설정',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ),
-              if (_keypadWasShuffled)
-                for (var index = 0; index < _keyCenters.length; index++)
-                  Positioned(
-                    left: _keyCenters[index].dx - 108,
-                    top: _keyCenters[index].dy - 68,
-                    width: 216,
-                    height: 136,
-                    child: ColoredBox(
-                      color: Colors.white,
+                  if (_errorMessage case final message?)
+                    Positioned(
+                      key: const Key('app-pin-error'),
+                      left: 120,
+                      right: 120,
+                      top: 785,
+                      height: 90,
                       child: Center(
-                        child: Image.asset(
-                          key: Key('app-pin-key-label-$index'),
-                          'assets/images/pin_digit_${_keypadDigits[index]}.png',
-                          width: 216,
-                          height: 136,
-                          fit: BoxFit.fill,
-                          filterQuality: FilterQuality.high,
-                          excludeFromSemantics: true,
+                        child: Text(
+                          message,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Color(0xFFD92D20),
+                            fontSize: 31,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ),
+                  if (_mode == _AccessPinMode.verify && _failedAttempts > 0)
+                    Positioned(
+                      left: 430,
+                      top: 890,
+                      width: 346,
+                      height: 90,
+                      child: FilledButton(
+                        key: const Key('app-pin-reset'),
+                        onPressed: _busy ? null : _resetPin,
+                        style: FilledButton.styleFrom(
+                          foregroundColor: const Color(0xFF202020),
+                          backgroundColor: const Color(0xFFF1F3F4),
+                          shape: const StadiumBorder(),
+                          elevation: 0,
+                        ),
+                        child: const Text(
+                          '비밀번호 재설정',
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                  if (_keypadWasShuffled)
+                    for (var index = 0; index < _keyCenters.length; index++)
+                      Positioned(
+                        left: _keyCenters[index].dx - 108,
+                        top: _keyCenters[index].dy - 68,
+                        width: 216,
+                        height: 136,
+                        child: ColoredBox(
+                          color: Colors.white,
+                          child: Center(
+                            child: Image.asset(
+                              key: Key('app-pin-key-label-$index'),
+                              'assets/images/pin_digit_${_keypadDigits[index]}.png',
+                              width: 216,
+                              height: 136,
+                              fit: BoxFit.fill,
+                              filterQuality: FilterQuality.high,
+                              excludeFromSemantics: true,
+                            ),
+                          ),
+                        ),
+                      ),
+                  for (var index = 0; index < _keypadDigits.length; index++)
+                    Positioned(
+                      key: Key('app-pin-key-${_keypadDigits[index]}'),
+                      left: _keyCenters[index].dx - 108,
+                      top: _keyCenters[index].dy - 68,
+                      width: 216,
+                      height: 136,
+                      child: Semantics(
+                        button: true,
+                        label: '숫자 ${_keypadDigits[index]}',
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () => _addDigit(_keypadDigits[index]),
+                        ),
+                      ),
+                    ),
+                  Positioned(
+                    key: const Key('app-pin-rearrange'),
+                    left: 92,
+                    top: 2155,
+                    width: 225,
+                    height: 180,
+                    child: Semantics(
+                      button: true,
+                      label: '숫자 재배열',
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: _shuffle,
+                      ),
+                    ),
                   ),
-              for (var index = 0; index < _keypadDigits.length; index++)
-                Positioned(
-                  key: Key('app-pin-key-${_keypadDigits[index]}'),
-                  left: _keyCenters[index].dx - 108,
-                  top: _keyCenters[index].dy - 68,
-                  width: 216,
-                  height: 136,
-                  child: Semantics(
-                    button: true,
-                    label: '숫자 ${_keypadDigits[index]}',
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () => _addDigit(_keypadDigits[index]),
+                  Positioned(
+                    key: const Key('app-pin-delete'),
+                    left: 890,
+                    top: 2155,
+                    width: 225,
+                    height: 180,
+                    child: Semantics(
+                      button: true,
+                      label: '한 자리 지우기',
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: _removeDigit,
+                      ),
+                    ),
+                  ),
+                  if (_showEntryLoading)
+                    const Positioned.fill(
+                      key: Key('pin-entry-loading'),
+                      child: _PinEntryLoadingMask(),
+                    ),
+                ],
+              ),
+            ),
+            if (_showEntryLoading)
+              Positioned(
+                left: 0,
+                right: 0,
+                top: padding.top,
+                bottom: padding.bottom,
+                child: const IgnorePointer(
+                  child: Align(
+                    alignment: Alignment(0, -0.03),
+                    child: SizedBox.square(
+                      key: Key('pin-entry-loading-logo'),
+                      dimension: 72,
+                      child: Image(
+                        key: Key('pin-entry-loading-animation'),
+                        image: AssetImage(
+                          'assets/images/loading_certificate_to_pin.png',
+                        ),
+                        fit: BoxFit.contain,
+                        filterQuality: FilterQuality.high,
+                        gaplessPlayback: true,
+                        excludeFromSemantics: true,
+                      ),
                     ),
                   ),
                 ),
-              Positioned(
-                key: const Key('app-pin-rearrange'),
-                left: 92,
-                top: 2155,
-                width: 225,
-                height: 180,
-                child: Semantics(
-                  button: true,
-                  label: '숫자 재배열',
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: _shuffle,
-                  ),
-                ),
               ),
-              Positioned(
-                key: const Key('app-pin-delete'),
-                left: 890,
-                top: 2155,
-                width: 225,
-                height: 180,
-                child: Semantics(
-                  button: true,
-                  label: '한 자리 지우기',
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: _removeDigit,
-                  ),
-                ),
-              ),
-            ],
-          ),
+          ],
         ),
+      ),
+    );
+  }
+}
+
+class _PinEntryLoadingMask extends StatelessWidget {
+  const _PinEntryLoadingMask();
+
+  @override
+  Widget build(BuildContext context) {
+    return AbsorbPointer(
+      child: const Stack(
+        fit: StackFit.expand,
+        children: [
+          Positioned(
+            left: 0,
+            right: 0,
+            top: 630,
+            bottom: 0,
+            child: ColoredBox(color: Colors.white),
+          ),
+        ],
       ),
     );
   }

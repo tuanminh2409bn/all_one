@@ -43,7 +43,9 @@ void main() {
     final auth = AuthService();
     final store = AppDataStore.inMemory(withMockData: false);
 
-    await tester.pumpWidget(_host(CertificateLoginScreen(auth: auth)));
+    await tester.pumpWidget(
+      _host(CertificateLoginScreen(auth: auth, autoContinue: false)),
+    );
     await _precache(tester, const ['assets/images/entry_7_certificate.png']);
     await tester.pumpAndSettle();
     await expectLater(

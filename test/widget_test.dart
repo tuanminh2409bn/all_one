@@ -41,6 +41,65 @@ void main() {
     },
   );
 
+  test(
+    'certificate loading asset preserves the source-video cadence',
+    () async {
+      final data = await rootBundle.load(
+        'assets/images/loading_certificate_to_pin.png',
+      );
+      final bytes = data.buffer.asUint8List(
+        data.offsetInBytes,
+        data.lengthInBytes,
+      );
+      final codec = await ui.instantiateImageCodec(bytes);
+
+      expect(codec.frameCount, 36);
+      const blankFrameIndices = {
+        0,
+        1,
+        2,
+        11,
+        14,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+      };
+      var totalDuration = Duration.zero;
+      for (var index = 0; index < codec.frameCount; index++) {
+        final frame = await codec.getNextFrame();
+        final expectedDuration = Duration(
+          milliseconds: index % 3 == 2 ? 16 : 17,
+        );
+        expect(frame.duration, expectedDuration);
+        totalDuration += frame.duration;
+        expect(frame.image.width, 288);
+        expect(frame.image.height, 288);
+        final pixels = await frame.image.toByteData(
+          format: ui.ImageByteFormat.rawRgba,
+        );
+        expect(pixels, isNotNull);
+        final centerAlpha = pixels!.getUint8(((144 * 288) + 144) * 4 + 3);
+        expect(
+          centerAlpha == 0,
+          blankFrameIndices.contains(index),
+          reason: 'frame $index must match the source-video blink cadence',
+        );
+        frame.image.dispose();
+      }
+      expect(totalDuration, const Duration(milliseconds: 600));
+      codec.dispose();
+    },
+  );
+
   testWidgets('entry flow starts at reference screen 6', (tester) async {
     _configureMockupViewport(tester);
     await tester.pumpWidget(
@@ -68,7 +127,9 @@ void main() {
     addTearDown(tester.view.resetViewPadding);
 
     await tester.pumpWidget(
-      _TestHost(home: CertificateLoginScreen(auth: AuthService())),
+      _TestHost(
+        home: CertificateLoginScreen(auth: AuthService(), autoContinue: false),
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -81,19 +142,35 @@ void main() {
     expect(tester.widget<ColoredBox>(background).color, Colors.white);
   });
 
-  testWidgets('screens 7 and 8 lead to home after six PIN digits', (
+  testWidgets('screen 7 automatically loads screen 8, then PIN leads home', (
     tester,
   ) async {
     _configureMockupViewport(tester);
     await tester.pumpWidget(
       _TestHost(home: CertificateLoginScreen(auth: AuthService())),
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
 
-    expect(find.byKey(const Key('certificate-login-button')), findsOneWidget);
-    await tester.tap(find.byKey(const Key('certificate-login-button')));
-    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('certificate-login-button')), findsNothing);
+    expect(find.byType(PinScreen), findsNothing);
+
+    await tester.pump(const Duration(milliseconds: 750));
+    await tester.pump(const Duration(milliseconds: 220));
     expect(find.byType(PinScreen), findsOneWidget);
+    expect(find.byKey(const Key('pin-entry-loading')), findsOneWidget);
+    expect(find.byKey(const Key('pin-entry-loading-logo')), findsOneWidget);
+    expect(
+      tester.getSize(find.byKey(const Key('pin-entry-loading-logo'))),
+      const Size.square(72),
+    );
+    expect(
+      find.byKey(const Key('pin-entry-loading-animation')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('pin-close')), findsNothing);
+
+    await tester.pump(const Duration(milliseconds: 390));
+    expect(find.byKey(const Key('pin-entry-loading')), findsNothing);
 
     for (final digit in [4, 7, 2, 6, 8, 5]) {
       await tester.tap(find.byKey(Key('app-pin-key-$digit')));
@@ -124,19 +201,14 @@ void main() {
     expect(find.byType(AppLoadingTransition), findsNothing);
   });
 
-  testWidgets('PIN close returns to certificate login', (tester) async {
+  testWidgets('PIN screen has no certificate back control', (tester) async {
     _configureMockupViewport(tester);
-    await tester.pumpWidget(
-      _TestHost(home: CertificateLoginScreen(auth: AuthService())),
-    );
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('certificate-login-button')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('pin-close')));
+    await tester.pumpWidget(_TestHost(home: PinScreen(auth: AuthService())));
     await tester.pumpAndSettle();
 
-    expect(find.byType(CertificateLoginScreen), findsOneWidget);
-    expect(find.byType(PinScreen), findsNothing);
+    expect(find.byType(PinScreen), findsOneWidget);
+    expect(find.byKey(const Key('pin-close')), findsNothing);
+    expect(find.byKey(const Key('pin-close-cover')), findsOneWidget);
   });
 
   testWidgets('PIN shuffle preserves key artwork and aligns entered dots', (
