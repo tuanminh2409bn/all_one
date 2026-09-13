@@ -1,6 +1,6 @@
 # all_one — project handoff
 
-Last updated: 2026-09-12 (Asia/Ho_Chi_Minh)
+Last updated: 2026-09-13 (Asia/Ho_Chi_Minh)
 
 This is the persistent starting context for a new development session. Read it after `AGENTS.md`. It records the current state and decisions; source code remains authoritative if the two differ.
 
@@ -126,10 +126,16 @@ flutter build apk --debug
   - The current Android debug APK with the sharpened, clean-edged, source-motion certificate loader and removed PIN close control built, installed, and launched successfully on Samsung SM-A366B over wireless ADB.
   - The first frame rendered with no Dart/Flutter exception during launch. Flutter detached while leaving the app process running for manual visual verification.
   - An earlier smoke test on the same device covered the white certificate status bar, large-text Home without overflow, loading animation, and navigation to Home.
+- Xcode Cloud/TestFlight build repair verification on 2026-09-13:
+  - A simulated clean checkout ran `ios/ci_scripts/ci_post_clone.sh` successfully and generated Flutter plus CocoaPods release configuration files before archive.
+  - Flutter 3.38.10 `flutter analyze`: no issues.
+  - Flutter 3.38.10 full `flutter test`: 35 passed.
+  - Flutter 3.38.10 unsigned release archive succeeded for `com.nhallone.allOne` version 1.0.0 build 1 and produced an arm64 `Runner.xcarchive`.
 
 ## Known limits and next-session checklist
 
 - This workspace may not be a Git worktree. If `git status` returns no repository, do not assume version history is available.
 - Release Android currently uses the debug signing configuration. Do not treat the current APK as production-signed.
+- Xcode Cloud requires `ios/ci_scripts/ci_post_clone.sh`. A clean checkout does not contain the ignored `ios/Flutter/Generated.xcconfig`; the post-clone script installs pinned Flutter 3.38.10, fetches iOS artifacts and Dart packages, installs CocoaPods when needed, runs `pod install`, and verifies all generated release configuration files before Xcode archives `Runner.xcworkspace`. Keep Flutter at 3.38 or newer because current Firebase plugins use the iOS scene lifecycle API introduced in Flutter 3.38.
 - iOS minimum deployment target is 15.0. Build/smoke-test iOS when an iPhone or suitable simulator is available, especially after native launch/status-bar changes.
 - At the start of any new task: read `AGENTS.md` and this file, inspect status, locate the exact widget/symbol, preserve unrelated edits, then run the narrowest relevant test before expanding verification.

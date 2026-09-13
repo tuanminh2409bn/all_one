@@ -163,7 +163,7 @@ class _TransactionsPanelState extends State<_TransactionsPanel> {
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
           child: DropdownButtonFormField<String>(
             key: const Key('transaction-account-selector'),
-            value: accountId,
+            initialValue: accountId,
             decoration: const InputDecoration(
               labelText: '계좌',
               border: OutlineInputBorder(),
@@ -479,7 +479,7 @@ class _AccountEditorState extends State<_AccountEditor> {
             children: [
               DropdownButtonFormField<String>(
                 key: const Key('account-bank-code'),
-                value: _bankCode,
+                initialValue: _bankCode,
                 decoration: const InputDecoration(labelText: '은행'),
                 items: [
                   for (final code in BankCatalog.codes)
@@ -822,7 +822,7 @@ class _RecipientEditorState extends State<_RecipientEditor> {
             ),
             DropdownButtonFormField<String>(
               key: const Key('recipient-bank-code'),
-              value: _bankCode,
+              initialValue: _bankCode,
               decoration: const InputDecoration(labelText: '은행'),
               items: [
                 for (final code in BankCatalog.codes)
