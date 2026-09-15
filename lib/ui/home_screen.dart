@@ -8,6 +8,7 @@ import 'account_details_screen.dart';
 import 'auth_sheet.dart';
 import 'data_management_screen.dart';
 import 'design_canvas.dart' show showDeviceStatusBar;
+import 'limit_release_screen.dart';
 import 'native_home_view.dart';
 import 'transfer_recipient_screen.dart';
 
@@ -234,6 +235,18 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _openLimitRelease() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) =>
+            LimitReleaseScreen(account: _primaryAccount, balance: _balance),
+      ),
+    );
+    if (mounted) {
+      showDeviceStatusBar(darkIcons: true, backgroundColor: Colors.white);
+    }
+  }
+
   Future<void> _openTransfer() async {
     final result = await Navigator.of(context).push<TransferFlowResult>(
       MaterialPageRoute<TransferFlowResult>(
@@ -315,6 +328,7 @@ class _HomeScreenState extends State<HomeScreen> {
       onMenuTap: _scrollToBenefits,
       onSelectNh: () => setState(() => _nhTab = true),
       onSelectOther: () => setState(() => _nhTab = false),
+      onLimitRelease: _openLimitRelease,
       onOpenDetails: _openAccountDetails,
       onTransfer: _openTransfer,
       onCopyAccount: account == null

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../core/app_data.dart';
 import '../core/auth_service.dart';
@@ -13,13 +14,12 @@ import 'data_management_screen.dart';
 import 'design_canvas.dart';
 
 const _ink = Color(0xFF111827);
-const _muted = Color(0xFF818A99);
+const _muted = Color(0xFF62696B);
 const _line = Color(0xFFD9DDE5);
-const _blue = Color(0xFF0969F6);
-const _pinBlue = Color(0xFF005DFA);
+const _green = Color(0xFF159757);
 const _recipientInk = Color(0xFF303846);
-const _recipientMuted = Color(0xFF657084);
-const _recipientPlaceholder = Color(0xFF8A93A4);
+const _recipientMuted = Color(0xFF62696B);
+const _recipientPlaceholder = Color(0xFF62696B);
 const _recipientSectionStyle = TextStyle(
   color: _recipientInk,
   fontSize: 20,
@@ -52,6 +52,7 @@ class TransferRecipientScreen extends StatefulWidget {
     AppDataStore? dataStore,
     this.auth,
     this.initialPinKeys,
+    this.initialBankPickerScrollOffset = 0,
   }) : assert(initialPinKeys == null || initialPinKeys.length == 10),
        dataStore = dataStore ?? AppDataStore.shared;
 
@@ -59,6 +60,8 @@ class TransferRecipientScreen extends StatefulWidget {
   final AuthService? auth;
   @visibleForTesting
   final List<String>? initialPinKeys;
+  @visibleForTesting
+  final double initialBankPickerScrollOffset;
 
   @override
   State<TransferRecipientScreen> createState() =>
@@ -67,7 +70,7 @@ class TransferRecipientScreen extends StatefulWidget {
 
 class _TransferRecipientScreenState extends State<TransferRecipientScreen> {
   _TransferStage _stage = _TransferStage.recipient;
-  bool _manualEntry = false;
+  bool _manualEntry = true;
   bool _favoriteRecipientsExpanded = false;
   bool _myAccountsExpanded = false;
   bool _recentRecipientsExpanded = true;
@@ -86,6 +89,7 @@ class _TransferRecipientScreenState extends State<TransferRecipientScreen> {
   String? _pinSetupError;
   int _pinFailedAttempts = 0;
   bool _pinBusy = false;
+  final TextEditingController _accountController = TextEditingController();
 
   @override
   void initState() {
@@ -97,6 +101,7 @@ class _TransferRecipientScreenState extends State<TransferRecipientScreen> {
   @override
   void dispose() {
     widget.dataStore.removeListener(_handleDataChange);
+    _accountController.dispose();
     super.dispose();
   }
 
@@ -136,55 +141,18 @@ class _TransferRecipientScreenState extends State<TransferRecipientScreen> {
       setState(() => _stage = _TransferStage.amount);
     } else if (_stage == _TransferStage.amount) {
       setState(() => _stage = _TransferStage.recipient);
-    } else if (_manualEntry) {
-      setState(() => _manualEntry = false);
     } else {
       Navigator.of(context).pop();
     }
   }
 
-  void _appendAccount(String key) => setState(() {
-    // Korean account numbers are numeric and do not exceed 30 digits. The
-    // cap prevents an accidental long press from creating an unusable entry.
-    if (_account.length + key.length <= 30) _account += key;
-  });
-  void _deleteAccount() => setState(() {
-    if (_account.isNotEmpty) {
-      _account = _account.substring(0, _account.length - 1);
-    }
-  });
+  void _setAccount(String value) {
+    setState(() => _account = value);
+  }
 
-  List<_Recipient> get _accountSuggestions {
-    final query = AppDataStore.normalizedAccountNumber(_account);
-    if (query.length < 4) return const [];
-
-    final seenAccounts = <String>{};
-    final matches = <(int score, int order, _Recipient recipient)>[];
-    var order = 0;
-    for (final recipient in [..._savedRecipients, ..._ownAccounts]) {
-      final accountNumber = AppDataStore.normalizedAccountNumber(
-        recipient.account,
-      );
-      final bankCode = recipient.bankCode ?? recipient.bank;
-      final uniqueKey = '$bankCode:$accountNumber';
-      final score = accountNumber.startsWith(query)
-          ? 0
-          : accountNumber.contains(query)
-          ? 1
-          : -1;
-      if (score >= 0 && seenAccounts.add(uniqueKey)) {
-        matches.add((score, order, recipient));
-      }
-      order += 1;
-    }
-    matches.sort((first, second) {
-      final byRelevance = first.$1.compareTo(second.$1);
-      return byRelevance != 0 ? byRelevance : first.$2.compareTo(second.$2);
-    });
-    return [
-      for (final match in matches.take(AppDataStore.maxSavedRecipients))
-        match.$3,
-    ];
+  void _clearAccount() {
+    _accountController.clear();
+    setState(() => _account = '');
   }
 
   void _appendAmount(String key) => setState(() {
@@ -201,8 +169,11 @@ class _TransferRecipientScreenState extends State<TransferRecipientScreen> {
       context: context,
       barrierDismissible: true,
       barrierLabel: '은행 선택 닫기',
-      barrierColor: const Color(0x8B27303E),
-      pageBuilder: (_, __, ___) => _BankSelectorDialog(initialBank: _bank),
+      barrierColor: const Color(0x52000000),
+      pageBuilder: (_, __, ___) => _BankSelectorDialog(
+        initialBank: _bank,
+        initialScrollOffset: widget.initialBankPickerScrollOffset,
+      ),
     );
     if (selected != null && mounted) setState(() => _bank = selected);
   }
@@ -252,11 +223,13 @@ class _TransferRecipientScreenState extends State<TransferRecipientScreen> {
 
   void _continueManualEntry() {
     final recipient = _matchingManualRecipient;
+    final account = recipient?.account ?? _account;
+    _accountController.text = account;
     setState(() {
       // Matching ignores separators so a digits-only manual entry can still
       // restore the exact presentation saved for this recipient. The amount
       // screen mirrors that saved account number, including hyphens.
-      if (recipient != null) _account = recipient.account;
+      _account = account;
       _recipientName = recipient?.name;
       _destinationAccountId = recipient?.internalAccountId;
       _stage = _TransferStage.amount;
@@ -305,6 +278,7 @@ class _TransferRecipientScreenState extends State<TransferRecipientScreen> {
   }
 
   void _startManualEntry() {
+    _accountController.clear();
     setState(() {
       _manualEntry = true;
       _account = '';
@@ -526,6 +500,18 @@ class _TransferRecipientScreenState extends State<TransferRecipientScreen> {
   @override
   Widget build(BuildContext context) {
     final sourceAccount = _selectedSourceAccount;
+    final mediaQuery = MediaQuery.of(context);
+    final canvasScale = min(
+      mediaQuery.size.width / mockupWidth,
+      mediaQuery.size.height / mockupHeight,
+    );
+    final bottomSystemInset =
+        (_stage == _TransferStage.amount ||
+                _stage == _TransferStage.confirmation) &&
+            Theme.of(context).platform == TargetPlatform.android &&
+            canvasScale > 0
+        ? mediaQuery.viewPadding.bottom / canvasScale
+        : 0.0;
     final androidPinFullBleed =
         _stage == _TransferStage.pin &&
         Theme.of(context).platform == TargetPlatform.android;
@@ -543,7 +529,7 @@ class _TransferRecipientScreenState extends State<TransferRecipientScreen> {
         backgroundColor: const Color(0xFFF0F3FA),
       ),
       child: DesignCanvas(
-        fullWidthBottomColor: androidPinFullBleed ? _pinBlue : null,
+        fullWidthBottomColor: androidPinFullBleed ? _green : null,
         fullWidthBottomTop: androidPinFullBleed ? 870 : null,
         fullWidthBottomKey: androidPinFullBleed
             ? const Key('android-transfer-pin-blue-background')
@@ -555,7 +541,9 @@ class _TransferRecipientScreenState extends State<TransferRecipientScreen> {
               _TopControls(
                 onBack: _back,
                 onManageRecipients: _openRecipientManagement,
+                onCancel: () => Navigator.of(context).pop(),
                 showBack: _stage != _TransferStage.pin,
+                showCancel: _stage == _TransferStage.recipient,
                 showRecipientActions:
                     _stage == _TransferStage.recipient && !_manualEntry,
               ),
@@ -601,17 +589,21 @@ class _TransferRecipientScreenState extends State<TransferRecipientScreen> {
                   onDelete: _deleteAmount,
                   onChooseSourceAccount: () =>
                       setState(() => _sourceAccountSelectorVisible = true),
+                  bottomInset: bottomSystemInset,
                 )
               else if (_manualEntry)
                 _ManualEntry(
+                  controller: _accountController,
                   account: _account,
                   bank: _bank,
-                  suggestions: _accountSuggestions,
-                  onDigit: _appendAccount,
-                  onDelete: _deleteAccount,
-                  onClear: () => setState(() => _account = ''),
+                  recentRecipients: _savedRecipients,
+                  ownAccounts: _ownAccounts,
+                  onAccountChanged: _setAccount,
+                  onClear: _clearAccount,
                   onChooseBank: _pickBank,
-                  onSelectSuggestion: _chooseRecipient,
+                  onSelectRecipient: _chooseRecipient,
+                  canContinue: _canContinue && sourceAccount != null,
+                  onContinue: _continueManualEntry,
                 )
               else
                 _RecipientLanding(
@@ -638,12 +630,12 @@ class _TransferRecipientScreenState extends State<TransferRecipientScreen> {
                   onSelect: _chooseRecipient,
                   onToggleFavorite: _toggleFavorite,
                 ),
-              if ((_stage != _TransferStage.recipient || _manualEntry) &&
+              if (_stage != _TransferStage.recipient &&
                   _stage != _TransferStage.pin)
                 Positioned(
                   left: 28,
                   right: 28,
-                  bottom: actionButtonBottom,
+                  bottom: actionButtonBottom + bottomSystemInset,
                   height: actionButtonHeight,
                   child: FilledButton(
                     key: const Key('transfer-next'),
@@ -660,7 +652,7 @@ class _TransferRecipientScreenState extends State<TransferRecipientScreen> {
                               ? _continueManualEntry
                               : null),
                     style: FilledButton.styleFrom(
-                      backgroundColor: _blue,
+                      backgroundColor: _green,
                       disabledBackgroundColor: const Color(0xFFF0F3F8),
                       disabledForegroundColor: const Color(0xFF98A1B1),
                       shape: RoundedRectangleBorder(
@@ -704,12 +696,16 @@ class _TopControls extends StatelessWidget {
   const _TopControls({
     required this.onBack,
     required this.onManageRecipients,
+    required this.onCancel,
     required this.showBack,
+    required this.showCancel,
     required this.showRecipientActions,
   });
   final VoidCallback onBack;
   final VoidCallback onManageRecipients;
+  final VoidCallback onCancel;
   final bool showBack;
+  final bool showCancel;
   final bool showRecipientActions;
 
   @override
@@ -733,7 +729,7 @@ class _TopControls extends StatelessWidget {
             '다건이체',
             key: Key('transfer-multiple'),
             style: TextStyle(
-              color: _blue,
+              color: _green,
               fontSize: 20,
               fontWeight: FontWeight.w500,
               fontVariations: [FontVariation('wght', 560)],
@@ -754,16 +750,40 @@ class _TopControls extends StatelessWidget {
             icon: const _RecipientQuickTransferIcon(),
           ),
         ),
-      Positioned(
-        right: 21,
-        top: 110,
-        child: IconButton(
-          key: const Key('transfer-home'),
-          onPressed: () =>
-              Navigator.of(context).popUntil((route) => route.isFirst),
-          icon: const _TransferCloseIcon(),
+      if (showCancel)
+        Positioned(
+          right: 28,
+          top: 113,
+          child: TextButton(
+            key: const Key('transfer-cancel'),
+            onPressed: onCancel,
+            style: TextButton.styleFrom(
+              foregroundColor: _recipientMuted,
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            child: const Text(
+              '취소',
+              style: TextStyle(
+                fontSize: 19,
+                fontWeight: FontWeight.w600,
+                letterSpacing: -.4,
+              ),
+            ),
+          ),
+        )
+      else
+        Positioned(
+          right: 21,
+          top: 110,
+          child: IconButton(
+            key: const Key('transfer-home'),
+            onPressed: () =>
+                Navigator.of(context).popUntil((route) => route.isFirst),
+            icon: const _TransferCloseIcon(),
+          ),
         ),
-      ),
     ],
   );
 }
@@ -925,8 +945,8 @@ class _RecipientLanding extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 21,
                     color: _recipientPlaceholder,
-                    fontWeight: FontWeight.w400,
-                    fontVariations: [FontVariation('wght', 470)],
+                    fontWeight: FontWeight.w600,
+                    fontVariations: [FontVariation('wght', 600)],
                   ),
                 ),
               ),
@@ -1217,8 +1237,8 @@ class _RecipientRow extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 17,
                   color: _recipientMuted,
-                  fontWeight: FontWeight.w400,
-                  fontVariations: [FontVariation('wght', 450)],
+                  fontWeight: FontWeight.w600,
+                  fontVariations: [FontVariation('wght', 600)],
                 ),
               ),
             ],
@@ -1240,7 +1260,7 @@ class _RecipientRow extends StatelessWidget {
                   ? Icons.star_rounded
                   : Icons.star_border_rounded,
               size: 31,
-              color: recipient.favorite ? _blue : const Color(0xFF657084),
+              color: recipient.favorite ? _green : const Color(0xFF657084),
             ),
           ),
       ],
@@ -1314,38 +1334,69 @@ class _RecipientSearchDelegate extends SearchDelegate<_Recipient?> {
   }
 }
 
-class _ManualEntry extends StatelessWidget {
-  static const _showAccountSuggestions = false;
-
+class _ManualEntry extends StatefulWidget {
   const _ManualEntry({
+    required this.controller,
     required this.account,
     required this.bank,
-    required this.suggestions,
-    required this.onDigit,
-    required this.onDelete,
+    required this.recentRecipients,
+    required this.ownAccounts,
+    required this.onAccountChanged,
     required this.onClear,
     required this.onChooseBank,
-    required this.onSelectSuggestion,
+    required this.onSelectRecipient,
+    required this.canContinue,
+    required this.onContinue,
   });
+  final TextEditingController controller;
   final String account;
   final String? bank;
-  final List<_Recipient> suggestions;
-  final ValueChanged<String> onDigit;
-  final VoidCallback onDelete, onClear, onChooseBank;
-  final ValueChanged<_Recipient> onSelectSuggestion;
+  final List<_Recipient> recentRecipients;
+  final List<_Recipient> ownAccounts;
+  final ValueChanged<String> onAccountChanged;
+  final VoidCallback onClear;
+  final VoidCallback onChooseBank;
+  final ValueChanged<_Recipient> onSelectRecipient;
+  final bool canContinue;
+  final VoidCallback onContinue;
+
+  @override
+  State<_ManualEntry> createState() => _ManualEntryState();
+}
+
+class _ManualEntryState extends State<_ManualEntry> {
+  var _tabIndex = 0;
+
+  List<_Recipient> get _visibleRecipients => switch (_tabIndex) {
+    0 => widget.recentRecipients,
+    1 =>
+      widget.recentRecipients
+          .where((recipient) => recipient.favorite)
+          .toList(growable: false),
+    2 => widget.ownAccounts,
+    _ => const [],
+  };
+
+  String get _emptyMessage => switch (_tabIndex) {
+    0 => '최근 이체 내역이 없습니다.',
+    1 => '자주 쓰는 계좌가 없습니다.',
+    2 => '등록된 내 계좌가 없습니다.',
+    _ => '연락처가 없습니다.',
+  };
+
   @override
   Widget build(BuildContext context) {
-    final hasSuggestions = _showAccountSuggestions && suggestions.isNotEmpty;
-    const bankTop = 412.0;
+    const tabs = ['최근', '자주', '내계좌', '연락처'];
+    final recipients = _visibleRecipients;
     return Stack(
       children: [
         const Positioned(
           left: 28,
-          top: 198,
+          top: 201,
           child: Text(
             '누구에게 보낼까요?',
             style: TextStyle(
-              fontSize: 33.5,
+              fontSize: 34,
               fontWeight: FontWeight.w700,
               letterSpacing: -1.5,
             ),
@@ -1354,175 +1405,200 @@ class _ManualEntry extends StatelessWidget {
         Positioned(
           left: 28,
           right: 28,
-          top: 285,
-          height: 110,
-          child: _AccountBox(account: account, onClear: onClear),
+          top: 283,
+          height: 79,
+          child: TextField(
+            key: const Key('transfer-account-input'),
+            controller: widget.controller,
+            keyboardType: TextInputType.number,
+            textInputAction: TextInputAction.next,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(30),
+            ],
+            onChanged: widget.onAccountChanged,
+            style: const TextStyle(
+              color: _ink,
+              fontSize: 24,
+              fontWeight: FontWeight.w500,
+              letterSpacing: -.5,
+            ),
+            decoration: InputDecoration(
+              hintText: '계좌번호를 입력해 주세요',
+              hintStyle: const TextStyle(
+                color: _recipientPlaceholder,
+                fontSize: 25,
+                fontWeight: FontWeight.w600,
+                letterSpacing: -.65,
+              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 30),
+              suffixIcon: widget.account.isEmpty
+                  ? null
+                  : IconButton(
+                      key: const Key('transfer-clear-account'),
+                      onPressed: widget.onClear,
+                      icon: const Icon(Icons.cancel, color: Color(0xFF949494)),
+                    ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(17),
+                borderSide: const BorderSide(color: Color(0xFFD8D8D8)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(17),
+                borderSide: const BorderSide(color: _ink, width: 1.4),
+              ),
+            ),
+          ),
         ),
         Positioned(
           left: 28,
           right: 28,
-          top: bankTop,
-          height: 104,
-          child: _BankBox(bank: bank, onTap: onChooseBank),
+          top: 382,
+          height: 80,
+          child: _BankBox(bank: widget.bank, onTap: widget.onChooseBank),
         ),
-        if (hasSuggestions)
+        const Positioned(
+          left: 28,
+          top: 487,
+          child: Text(
+            '계좌번호를 입력하면 은행을 조회해 드릴게요',
+            style: TextStyle(
+              color: _recipientMuted,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              letterSpacing: -.45,
+            ),
+          ),
+        ),
+        Positioned(
+          left: 28,
+          right: 28,
+          top: 554,
+          height: 70,
+          child: FilledButton(
+            key: const Key('transfer-next'),
+            onPressed: widget.canContinue ? widget.onContinue : null,
+            style: FilledButton.styleFrom(
+              backgroundColor: _green,
+              disabledBackgroundColor: const Color(0xFFE8E8E8),
+              disabledForegroundColor: const Color(0xFF9C9C9C),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text(
+              '다음',
+              style: TextStyle(fontSize: 23, fontWeight: FontWeight.w400),
+            ),
+          ),
+        ),
+        Positioned(
+          left: 28,
+          right: 28,
+          top: 687,
+          height: 62,
+          child: Row(
+            children: [
+              for (var index = 0; index < tabs.length; index++)
+                Expanded(
+                  child: InkWell(
+                    key: Key('transfer-recipient-tab-${tabs[index]}'),
+                    onTap: () => setState(() => _tabIndex = index),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Text(
+                          tabs[index],
+                          style: TextStyle(
+                            color: _tabIndex == index
+                                ? _ink
+                                : const Color(0xFF303030),
+                            fontSize: 22,
+                            fontWeight: _tabIndex == index
+                                ? FontWeight.w700
+                                : FontWeight.w400,
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+                        Container(
+                          height: _tabIndex == index ? 3 : 1,
+                          color: _tabIndex == index
+                              ? _ink
+                              : const Color(0xFFDADADA),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        if (recipients.isEmpty)
           Positioned(
             left: 28,
             right: 28,
-            top: 535,
-            height: 44,
-            child: _AccountSuggestions(
-              suggestions: suggestions,
-              onSelect: onSelectSuggestion,
-            ),
-          ),
-        Positioned(
-          left: 0,
-          right: 0,
-          top: 790,
-          height: 355,
-          child: _NumericPad(
-            prefix: 'account',
-            showDoubleZero: false,
-            onDigit: onDigit,
-            onDelete: onDelete,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _AccountSuggestions extends StatelessWidget {
-  const _AccountSuggestions({
-    required this.suggestions,
-    required this.onSelect,
-  });
-
-  final List<_Recipient> suggestions;
-  final ValueChanged<_Recipient> onSelect;
-
-  @override
-  Widget build(BuildContext context) => ListView.separated(
-    key: const Key('transfer-account-suggestions'),
-    padding: EdgeInsets.zero,
-    scrollDirection: Axis.horizontal,
-    itemCount: suggestions.length,
-    separatorBuilder: (_, __) => const SizedBox(width: 8),
-    itemBuilder: (context, index) {
-      final recipient = suggestions[index];
-      return Material(
-        color: Colors.transparent,
-        child: InkWell(
-          key: Key(
-            'transfer-account-suggestion-${recipient.recipientId ?? recipient.account}',
-          ),
-          onTap: () => onSelect(recipient),
-          borderRadius: BorderRadius.circular(22),
-          child: Container(
-            height: 44,
-            constraints: const BoxConstraints(maxWidth: 520),
-            padding: const EdgeInsets.fromLTRB(16, 0, 17, 0),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF2F5FA),
-              borderRadius: BorderRadius.circular(22),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
+            top: 844,
+            child: Column(
               children: [
-                BankLogo(
-                  bankCode: recipient.bankCode ?? recipient.bank,
-                  size: BankLogoSize.suggestion,
-                ),
-                const SizedBox(width: 7),
-                Flexible(
-                  child: Text(
-                    '${recipient.name} ${recipient.account}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: _ink,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: -.25,
+                Container(
+                  key: const Key('transfer-recipient-empty-icon'),
+                  width: 82,
+                  height: 82,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFD5D5D5),
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  child: const Text(
+                    '•••',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 5,
                     ),
+                  ),
+                ),
+                const SizedBox(height: 32),
+                Text(
+                  _emptyMessage,
+                  key: const Key('transfer-recipient-empty-message'),
+                  style: const TextStyle(
+                    color: _ink,
+                    fontSize: 27,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: -1,
                   ),
                 ),
               ],
             ),
-          ),
-        ),
-      );
-    },
-  );
-}
-
-class _AccountBox extends StatelessWidget {
-  const _AccountBox({required this.account, required this.onClear});
-  final String account;
-  final VoidCallback onClear;
-  @override
-  Widget build(BuildContext context) => Container(
-    key: const Key('transfer-account-input'),
-    padding: const EdgeInsets.fromLTRB(20, 18, 16, 12),
-    decoration: BoxDecoration(
-      border: Border.all(color: _blue, width: 3),
-      borderRadius: BorderRadius.circular(17),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          '계좌번호',
-          style: TextStyle(
-            color: _blue,
-            fontSize: 17,
-            fontWeight: FontWeight.w400,
-            fontVariations: [FontVariation('wght', 400)],
-            letterSpacing: -.2,
-          ),
-        ),
-        const SizedBox(height: 7),
-        Row(
-          children: [
-            if (account.isEmpty) ...[
-              Container(
-                key: const Key('transfer-account-caret'),
-                width: 2,
-                height: 34,
-                color: const Color(0xFFB9DFFF),
-              ),
-              const SizedBox(width: 10),
-            ],
-            Expanded(
-              child: Text(
-                account.isEmpty ? '- 없이 숫자만 입력' : account,
-                style: TextStyle(
-                  fontSize: 26,
-                  color: account.isEmpty ? _muted : _ink,
-                  fontWeight: FontWeight.w300,
-                  fontVariations: const [FontVariation('wght', 350)],
-                  letterSpacing: -.4,
-                ),
-              ),
+          )
+        else
+          Positioned(
+            left: 28,
+            right: 28,
+            top: 773,
+            bottom: 28,
+            child: ListView.separated(
+              key: const Key('transfer-recipient-tab-list'),
+              padding: EdgeInsets.zero,
+              itemCount: recipients.length,
+              separatorBuilder: (_, __) => const Divider(color: _line),
+              itemBuilder: (context, index) {
+                final recipient = recipients[index];
+                return SizedBox(
+                  height: 82,
+                  child: _RecipientRow(
+                    recipient: recipient,
+                    onTap: () => widget.onSelectRecipient(recipient),
+                  ),
+                );
+              },
             ),
-            if (account.isNotEmpty)
-              SizedBox(
-                width: 32,
-                height: 32,
-                child: IconButton(
-                  key: const Key('transfer-clear-account'),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  onPressed: onClear,
-                  icon: const Icon(Icons.cancel, color: Color(0xFF949CAA)),
-                ),
-              ),
-          ],
-        ),
+          ),
       ],
-    ),
-  );
+    );
+  }
 }
 
 class _BankBox extends StatelessWidget {
@@ -1534,9 +1610,10 @@ class _BankBox extends StatelessWidget {
     key: const Key('transfer-bank-selector'),
     onPressed: onTap,
     style: OutlinedButton.styleFrom(
-      padding: const EdgeInsets.symmetric(horizontal: 22),
+      foregroundColor: _ink,
+      padding: const EdgeInsets.symmetric(horizontal: 30),
       alignment: Alignment.centerLeft,
-      side: const BorderSide(color: _line),
+      side: const BorderSide(color: Color(0xFFD8D8D8)),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(17)),
     ),
     child: Row(
@@ -1544,13 +1621,12 @@ class _BankBox extends StatelessWidget {
         Expanded(
           child: bank == null
               ? const Text(
-                  '은행 또는 증권사 선택',
+                  '은행을 선택해 주세요',
                   style: TextStyle(
-                    color: _muted,
-                    fontSize: 27,
-                    fontWeight: FontWeight.w300,
-                    fontVariations: [FontVariation('wght', 350)],
-                    letterSpacing: -.4,
+                    color: _ink,
+                    fontSize: 25,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: -.65,
                   ),
                 )
               : Column(
@@ -1558,11 +1634,15 @@ class _BankBox extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      '은행 또는 증권사 선택',
-                      style: TextStyle(color: _muted, fontSize: 16),
+                      '은행/증권사',
+                      style: TextStyle(
+                        color: _recipientMuted,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     Text(
-                      bank!,
+                      _institutionLabel(bank!),
                       style: const TextStyle(
                         fontSize: 23,
                         color: _ink,
@@ -1572,7 +1652,7 @@ class _BankBox extends StatelessWidget {
                   ],
                 ),
         ),
-        const Icon(Icons.keyboard_arrow_down_rounded, color: _ink, size: 35),
+        const Icon(Icons.keyboard_arrow_down_rounded, color: _ink, size: 31),
       ],
     ),
   );
@@ -1589,6 +1669,7 @@ class _AmountPage extends StatelessWidget {
     required this.onDigit,
     required this.onDelete,
     required this.onChooseSourceAccount,
+    required this.bottomInset,
   });
   final _SourceAccount sourceAccount;
   final String bank, account;
@@ -1598,6 +1679,7 @@ class _AmountPage extends StatelessWidget {
   final ValueChanged<String> onDigit;
   final VoidCallback onDelete;
   final VoidCallback onChooseSourceAccount;
+  final double bottomInset;
   @override
   Widget build(BuildContext context) {
     final entered = amount > 0;
@@ -1710,16 +1792,16 @@ class _AmountPage extends StatelessWidget {
             ],
           ),
         ),
-        const Positioned(
+        Positioned(
           left: 29,
           right: 29,
-          top: 730,
-          child: _AmountShortcuts(),
+          top: 730 - bottomInset,
+          child: const _AmountShortcuts(),
         ),
         Positioned(
           left: 47,
           right: 47,
-          top: 845,
+          top: 845 - bottomInset,
           height: 300,
           child: _NumericPad(
             prefix: 'amount',
@@ -1910,7 +1992,7 @@ class _SourceAccountOption extends StatelessWidget {
               top: 35,
               child: Icon(
                 Icons.check_rounded,
-                color: _blue,
+                color: _green,
                 size: 29,
                 weight: 700,
               ),
@@ -2018,9 +2100,9 @@ class _NumericPad extends StatelessWidget {
               value,
               style: TextStyle(
                 fontSize: 35,
-                fontWeight: showDoubleZero ? FontWeight.w700 : FontWeight.w400,
+                fontWeight: showDoubleZero ? FontWeight.w500 : FontWeight.w400,
                 fontVariations: [
-                  FontVariation('wght', showDoubleZero ? 700 : 400),
+                  FontVariation('wght', showDoubleZero ? 500 : 400),
                 ],
                 color: _ink,
               ),
@@ -2037,28 +2119,145 @@ class _NumericPad extends StatelessWidget {
   }
 }
 
+class _InstitutionItem {
+  const _InstitutionItem(
+    this.value,
+    this.label, {
+    this.logoCode,
+    this.fallbackColor = const Color(0xFF2464AA),
+    this.fallbackMark,
+  });
+
+  final String value;
+  final String label;
+  final String? logoCode;
+  final Color fallbackColor;
+  final String? fallbackMark;
+}
+
+const _bankPickerItems = <_InstitutionItem>[
+  _InstitutionItem('농협', 'NH농협', logoCode: '농협'),
+  _InstitutionItem('국민', '국민은행', logoCode: '국민'),
+  _InstitutionItem('기업', '기업은행', logoCode: '기업'),
+  _InstitutionItem('산업', '산업은행', logoCode: '산업'),
+  _InstitutionItem('신한', '신한은행', logoCode: '신한'),
+  _InstitutionItem('우리', '우리은행', logoCode: '우리'),
+  _InstitutionItem('하나', '하나은행', logoCode: '하나'),
+  _InstitutionItem('한국씨티', '한국씨티은행', logoCode: '한국씨티'),
+  _InstitutionItem('SC', 'SC제일은행', logoCode: 'SC'),
+  _InstitutionItem('카카오뱅크', '카카오뱅크', logoCode: '카카오뱅크'),
+  _InstitutionItem('케이뱅크', '케이뱅크', logoCode: '케이뱅크'),
+  _InstitutionItem('토스뱅크', '토스뱅크', logoCode: '토스뱅크'),
+  _InstitutionItem('경남', '경남은행', logoCode: '경남'),
+  _InstitutionItem('광주', '광주은행', logoCode: '광주'),
+  _InstitutionItem('아이엠뱅크(대구)', '아이엠뱅크 (구)대구', logoCode: '아이엠뱅크(대구)'),
+  _InstitutionItem('부산', '부산은행', logoCode: '부산'),
+  _InstitutionItem('전북', '전북은행', logoCode: '전북'),
+  _InstitutionItem('회원수협', '수협', logoCode: '회원수협'),
+  _InstitutionItem('제주', '제주은행', logoCode: '제주'),
+  _InstitutionItem('산림조합', '산림조합중앙회', logoCode: '산림조합'),
+  _InstitutionItem('신협', '신협중앙회', logoCode: '신협'),
+  _InstitutionItem('새마을', '새마을금고', logoCode: '새마을'),
+  _InstitutionItem('우체국', '우체국', logoCode: '우체국'),
+  _InstitutionItem('저축은행', '저축은행', logoCode: '저축은행'),
+  _InstitutionItem('도이치', '도이치은행', logoCode: '도이치'),
+  _InstitutionItem('BOA', '뱅크오브아메리카', logoCode: 'BOA'),
+  _InstitutionItem('중국공상', '중국공상은행', logoCode: '중국공상'),
+  _InstitutionItem('중국', '중국은행', logoCode: '중국'),
+  _InstitutionItem('중국건설', '중국건설은행', logoCode: '중국건설'),
+  _InstitutionItem('BNP파리바', 'BNP파리바은행', logoCode: 'BNP파리바'),
+  _InstitutionItem('HSBC', 'HSBC은행', logoCode: 'HSBC'),
+  _InstitutionItem('JP모간', 'JP모건체이스은행', logoCode: 'JP모간'),
+];
+
+const _localTaxPickerItem = _InstitutionItem('지방세', '지방세입', logoCode: '지방세');
+
+const _securitiesPickerItems = <_InstitutionItem>[
+  _InstitutionItem('NH투자증권', 'NH투자증권', logoCode: '농협'),
+  _InstitutionItem('교보증권', '교보증권', logoCode: '교보증권'),
+  _InstitutionItem('대신증권', '대신증권', logoCode: '대신증권'),
+  _InstitutionItem(
+    '메리츠증권',
+    '메리츠증권',
+    fallbackColor: Color(0xFFE52525),
+    fallbackMark: 'meritz',
+  ),
+  _InstitutionItem('미래에셋증권', '미래에셋증권', logoCode: '미래에셋증권'),
+  _InstitutionItem(
+    '부국증권',
+    '부국증권',
+    fallbackColor: Color(0xFF234D99),
+    fallbackMark: '◇',
+  ),
+  _InstitutionItem('삼성증권', '삼성증권', logoCode: '삼성증권'),
+  _InstitutionItem('신영증권', '신영증권', logoCode: '신영증권'),
+  _InstitutionItem('신한투자증권', '신한투자증권', logoCode: '신한투자증권'),
+  _InstitutionItem(
+    '에스케이증권',
+    '에스케이증권',
+    fallbackColor: Color(0xFFE51E34),
+    fallbackMark: 'SK',
+  ),
+  _InstitutionItem('유안타증권', '유안타증권', logoCode: '유안타증권'),
+  _InstitutionItem(
+    '유진투자증권',
+    '유진투자증권',
+    fallbackColor: Color(0xFFE23A36),
+    fallbackMark: '●',
+  ),
+  _InstitutionItem(
+    'LS증권',
+    'LS증권',
+    fallbackColor: Color(0xFF102B65),
+    fallbackMark: 'LS',
+  ),
+  _InstitutionItem('카카오페이증권', '카카오페이증권', logoCode: '카카오페이증권'),
+  _InstitutionItem('케이프투자증권', '케이프투자증권', logoCode: '케이프투자증권'),
+  _InstitutionItem('키움증권', '키움증권', logoCode: '키움증권'),
+  _InstitutionItem('토스증권', '토스증권', logoCode: '토스증권'),
+  _InstitutionItem('하나증권', '하나증권', logoCode: '하나증권'),
+  _InstitutionItem('아이엠증권', '아이엠증권', logoCode: '아이엠뱅크(대구)'),
+  _InstitutionItem('한국투자증권', '한국투자증권', logoCode: '한국투자증권'),
+  _InstitutionItem('한화투자증권', '한화투자증권', logoCode: '한화투자증권'),
+  _InstitutionItem('현대차증권', '현대차증권', logoCode: '현대차증권'),
+  _InstitutionItem('우리투자증권', '우리투자증권', logoCode: '우리'),
+  _InstitutionItem('BNK증권', 'BNK증권', logoCode: '경남'),
+];
+
+String _institutionLabel(String value) {
+  for (final institution in [
+    ..._bankPickerItems,
+    _localTaxPickerItem,
+    ..._securitiesPickerItems,
+  ]) {
+    if (institution.value == value) return institution.label;
+  }
+  return value;
+}
+
 class _BankSelectorDialog extends StatefulWidget {
-  const _BankSelectorDialog({this.initialBank});
+  const _BankSelectorDialog({this.initialBank, this.initialScrollOffset = 0});
   final String? initialBank;
+  final double initialScrollOffset;
   @override
   State<_BankSelectorDialog> createState() => _BankSelectorDialogState();
 }
 
 class _BankSelectorDialogState extends State<_BankSelectorDialog> {
   bool securities = false;
+  late final ScrollController _scrollController = ScrollController(
+    initialScrollOffset: widget.initialScrollOffset,
+  );
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final names = securities
-        ? BankCatalog.securitiesCodes
-        : BankCatalog.bankCodes;
-    // The selector lives on its own Navigator route. Rendering its fixed
-    // coordinates directly in Android logical pixels made a 50 px logo appear
-    // about 75 physical pixels on devices such as the Samsung reference
-    // handset. Scale the complete 589 px artwork to the route width so the
-    // sheet, tiles, labels and logos all retain the original proportions on
-    // both tabs. Its height may extend below the route and is deliberately
-    // clipped above Android's persistent system navigation bar.
+    final institutions = securities ? _securitiesPickerItems : _bankPickerItems;
     return LayoutBuilder(
       builder: (context, constraints) {
         final scale = constraints.maxWidth / mockupWidth;
@@ -2099,89 +2298,196 @@ class _BankSelectorDialogState extends State<_BankSelectorDialog> {
                             child: GestureDetector(
                               onTap: () {},
                               child: Container(
+                                clipBehavior: Clip.antiAlias,
                                 decoration: const BoxDecoration(
                                   color: Colors.white,
                                   borderRadius: BorderRadius.vertical(
                                     top: Radius.circular(26),
                                   ),
                                 ),
-                                child: Column(
+                                child: Stack(
                                   children: [
-                                    Padding(
-                                      padding: const EdgeInsets.fromLTRB(
-                                        28,
-                                        19,
-                                        20,
-                                        3,
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          const Expanded(
-                                            child: Text(
-                                              '은행 또는 증권사 선택',
-                                              style: TextStyle(
-                                                fontSize: 26,
-                                                fontWeight: FontWeight.w700,
-                                              ),
-                                            ),
-                                          ),
-                                          IconButton(
-                                            key: const Key(
-                                              'bank-selector-close',
-                                            ),
-                                            onPressed: () =>
-                                                Navigator.pop(context),
-                                            icon: const Icon(
-                                              Icons.close_rounded,
-                                              size: 35,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    Row(
+                                    Column(
                                       children: [
-                                        _BankTab(
-                                          label: '은행',
-                                          selected: !securities,
-                                          onTap: () => setState(
-                                            () => securities = false,
+                                        const SizedBox(height: 76),
+                                        Expanded(
+                                          child: ClipRect(
+                                            child: CustomScrollView(
+                                              key: Key(
+                                                securities
+                                                    ? 'bank-selector-list-securities'
+                                                    : 'bank-selector-list-banks',
+                                              ),
+                                              controller: _scrollController,
+                                              clipBehavior: Clip.hardEdge,
+                                              slivers: [
+                                                SliverToBoxAdapter(
+                                                  child: Padding(
+                                                    padding:
+                                                        const EdgeInsets.fromLTRB(
+                                                          28,
+                                                          74,
+                                                          28,
+                                                          24,
+                                                        ),
+                                                    child: SizedBox(
+                                                      height: 64,
+                                                      child: Row(
+                                                        children: [
+                                                          _BankTab(
+                                                            label: '은행',
+                                                            selected:
+                                                                !securities,
+                                                            left: true,
+                                                            onTap: () => setState(
+                                                              () => securities =
+                                                                  false,
+                                                            ),
+                                                          ),
+                                                          _BankTab(
+                                                            label: '증권사',
+                                                            selected:
+                                                                securities,
+                                                            left: false,
+                                                            onTap: () => setState(
+                                                              () => securities =
+                                                                  true,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                                SliverPadding(
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 35,
+                                                      ),
+                                                  sliver: SliverGrid(
+                                                    gridDelegate:
+                                                        const SliverGridDelegateWithFixedCrossAxisCount(
+                                                          crossAxisCount: 2,
+                                                          mainAxisExtent: 72,
+                                                          crossAxisSpacing: 24,
+                                                        ),
+                                                    delegate: SliverChildBuilderDelegate(
+                                                      (context, index) {
+                                                        final institution =
+                                                            institutions[index];
+                                                        return _InstitutionTile(
+                                                          institution:
+                                                              institution,
+                                                          onTap: () =>
+                                                              Navigator.pop(
+                                                                context,
+                                                                institution
+                                                                    .value,
+                                                              ),
+                                                        );
+                                                      },
+                                                      childCount:
+                                                          institutions.length,
+                                                    ),
+                                                  ),
+                                                ),
+                                                if (!securities) ...[
+                                                  const SliverToBoxAdapter(
+                                                    child: Padding(
+                                                      padding: EdgeInsets.only(
+                                                        top: 9,
+                                                      ),
+                                                      child: Divider(
+                                                        height: 1,
+                                                        color: Color(
+                                                          0xFFE2E2E2,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  SliverPadding(
+                                                    padding:
+                                                        EdgeInsets.fromLTRB(
+                                                          35,
+                                                          20,
+                                                          35,
+                                                          34 + hiddenBottom,
+                                                        ),
+                                                    sliver: SliverToBoxAdapter(
+                                                      child: SizedBox(
+                                                        width: 245,
+                                                        height: 60,
+                                                        child: _InstitutionTile(
+                                                          institution:
+                                                              _localTaxPickerItem,
+                                                          onTap: () =>
+                                                              Navigator.pop(
+                                                                context,
+                                                                _localTaxPickerItem
+                                                                    .value,
+                                                              ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ] else
+                                                  SliverToBoxAdapter(
+                                                    child: SizedBox(
+                                                      height: 34 + hiddenBottom,
+                                                    ),
+                                                  ),
+                                              ],
+                                            ),
                                           ),
-                                        ),
-                                        _BankTab(
-                                          label: '증권사',
-                                          selected: securities,
-                                          onTap: () =>
-                                              setState(() => securities = true),
                                         ),
                                       ],
                                     ),
-                                    Expanded(
-                                      child: GridView.builder(
-                                        key: Key(
-                                          securities
-                                              ? 'bank-selector-list-securities'
-                                              : 'bank-selector-list-banks',
-                                        ),
-                                        padding: EdgeInsets.fromLTRB(
-                                          28,
-                                          61,
-                                          28,
-                                          34 + hiddenBottom,
-                                        ),
-                                        gridDelegate:
-                                            const SliverGridDelegateWithFixedCrossAxisCount(
-                                              crossAxisCount: 3,
-                                              mainAxisExtent: 134,
-                                              mainAxisSpacing: 11,
-                                              crossAxisSpacing: 12,
-                                            ),
-                                        itemCount: names.length,
-                                        itemBuilder: (_, i) => _BankTile(
-                                          name: names[i],
-                                          index: i,
-                                          onTap: () =>
-                                              Navigator.pop(context, names[i]),
+                                    Positioned(
+                                      left: 0,
+                                      right: 0,
+                                      top: 0,
+                                      height: 76,
+                                      child: ColoredBox(
+                                        color: Colors.white,
+                                        child: Padding(
+                                          padding: const EdgeInsets.fromLTRB(
+                                            35,
+                                            24,
+                                            27,
+                                            0,
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              const Expanded(
+                                                child: Text(
+                                                  '은행/증권사 선택',
+                                                  style: TextStyle(
+                                                    fontSize: 26,
+                                                    fontWeight: FontWeight.w700,
+                                                    letterSpacing: -1.1,
+                                                  ),
+                                                ),
+                                              ),
+                                              IconButton(
+                                                key: const Key(
+                                                  'bank-selector-close',
+                                                ),
+                                                onPressed: () =>
+                                                    Navigator.pop(context),
+                                                padding: EdgeInsets.zero,
+                                                constraints:
+                                                    const BoxConstraints.tightFor(
+                                                      width: 42,
+                                                      height: 42,
+                                                    ),
+                                                icon: const Icon(
+                                                  Icons.close_rounded,
+                                                  size: 35,
+                                                  weight: 400,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -2208,10 +2514,12 @@ class _BankTab extends StatelessWidget {
   const _BankTab({
     required this.label,
     required this.selected,
+    required this.left,
     required this.onTap,
   });
   final String label;
   final bool selected;
+  final bool left;
   final VoidCallback onTap;
   @override
   Widget build(BuildContext context) => Expanded(
@@ -2219,24 +2527,24 @@ class _BankTab extends StatelessWidget {
       key: Key('bank-tab-$label'),
       onTap: onTap,
       child: Container(
-        height: 64,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(
-              color: selected
-                  ? const Color(0xFF667084)
-                  : const Color(0xFFE3E5EA),
-              width: selected ? 3 : 1,
-            ),
+          color: selected ? Colors.white : const Color(0xFFFAFAFA),
+          borderRadius: BorderRadius.horizontal(
+            left: left ? const Radius.circular(11) : Radius.zero,
+            right: left ? Radius.zero : const Radius.circular(11),
+          ),
+          border: Border.all(
+            color: selected ? _ink : const Color(0xFFD2D2D2),
+            width: selected ? 1.5 : 1,
           ),
         ),
         child: Text(
           label,
           style: TextStyle(
-            fontSize: 22,
-            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-            color: selected ? _ink : _muted,
+            fontSize: 21,
+            fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+            color: selected ? _ink : _recipientMuted,
           ),
         ),
       ),
@@ -2244,75 +2552,69 @@ class _BankTab extends StatelessWidget {
   );
 }
 
-class _BankTile extends StatelessWidget {
-  const _BankTile({
-    required this.name,
-    required this.index,
-    required this.onTap,
-  });
-  final String name;
-  final int index;
+class _InstitutionTile extends StatelessWidget {
+  const _InstitutionTile({required this.institution, required this.onTap});
+
+  final _InstitutionItem institution;
   final VoidCallback onTap;
+
   @override
-  Widget build(BuildContext context) {
-    final asset = BankCatalog.tryLogoAsset(name);
-    const colors = [
-      Color(0xFF0959DD),
-      Color(0xFF3979D8),
-      Color(0xFF655642),
-      Color(0xFF1476B4),
-      Color(0xFF168653),
-      Color(0xFF376C9D),
-      Color(0xFF047BB9),
-      Color(0xFF22669E),
-    ];
-    return InkWell(
-      key: Key('bank-$name'),
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        height: 134,
-        decoration: BoxDecoration(
-          color: const Color(0xFFF0F3FA),
-          borderRadius: BorderRadius.circular(12),
+  Widget build(BuildContext context) => InkWell(
+    key: Key('bank-${institution.value}'),
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(8),
+    child: Row(
+      children: [
+        SizedBox.square(
+          key: Key('bank-logo-frame-${institution.value}'),
+          dimension: 30,
+          child: institution.logoCode == null
+              ? _FallbackInstitutionLogo(institution: institution)
+              : BankLogo(bankCode: institution.logoCode!, size: 30),
         ),
-        child: Column(
-          children: [
-            const SizedBox(height: 20),
-            SizedBox.square(
-              key: Key('bank-logo-frame-$name'),
-              dimension: BankLogoSize.picker,
-              child: asset != null
-                  ? BankLogo(bankCode: name, size: BankLogoSize.picker)
-                  : Container(
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: colors[index % colors.length],
-                        shape: BoxShape.circle,
-                      ),
-                      child: Text(
-                        name.substring(0, 1),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 25,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Text(
+            institution.label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: _ink,
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              letterSpacing: -.55,
             ),
-            const SizedBox(height: 14),
-            Text(
-              name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-            ),
-          ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _FallbackInstitutionLogo extends StatelessWidget {
+  const _FallbackInstitutionLogo({required this.institution});
+
+  final _InstitutionItem institution;
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: BoxDecoration(
+      color: institution.fallbackColor,
+      borderRadius: BorderRadius.circular(10),
+    ),
+    child: Center(
+      child: Text(
+        institution.fallbackMark ?? institution.label.characters.first,
+        maxLines: 1,
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: (institution.fallbackMark?.length ?? 1) > 3 ? 7 : 11,
+          fontWeight: FontWeight.w700,
+          letterSpacing: -.35,
         ),
       ),
-    );
-  }
+    ),
+  );
 }
 
 class _TransferReviewPage extends StatelessWidget {
@@ -2361,13 +2663,13 @@ class _TransferReviewPage extends StatelessWidget {
               padding: const EdgeInsets.all(2),
               decoration: BoxDecoration(
                 color: const Color(0xFFF7F9FC),
-                shape: BoxShape.circle,
+                borderRadius: BorderRadius.circular(22),
                 border: Border.all(color: const Color(0xFFE8EDF5)),
               ),
               child: logoAsset == null
                   ? const Icon(
                       Icons.account_balance_rounded,
-                      color: _blue,
+                      color: _green,
                       size: 46,
                     )
                   : BankLogo(bankCode: bank, size: 72),
@@ -2400,10 +2702,10 @@ class _TransferReviewPage extends StatelessWidget {
             '수수료 무료',
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: Color(0xFF626B79),
+              color: _recipientMuted,
               fontSize: 20,
-              fontWeight: FontWeight.w400,
-              fontVariations: [FontVariation('wght', 450)],
+              fontWeight: FontWeight.w600,
+              fontVariations: [FontVariation('wght', 600)],
             ),
           ),
         ),
@@ -2615,11 +2917,11 @@ class _TransferPinPage extends StatelessWidget {
                 height: 29,
                 margin: const EdgeInsets.symmetric(horizontal: 13.5),
                 decoration: BoxDecoration(
-                  color: index < enteredDigits ? _pinBlue : Colors.white,
+                  color: index < enteredDigits ? _green : Colors.white,
                   shape: BoxShape.circle,
                   border: Border.all(
                     color: index == enteredDigits || index < enteredDigits
-                        ? _pinBlue
+                        ? _green
                         : const Color(0xFF858C99),
                     width: 1.5,
                   ),
@@ -2680,7 +2982,8 @@ class _TransferPinPage extends StatelessWidget {
           top: 870,
           bottom: 0,
           child: ColoredBox(
-            color: _pinBlue,
+            key: const Key('transfer-pin-keypad-background'),
+            color: _green,
             child: Transform.translate(
               offset: const Offset(0, -1),
               child: GridView.count(
@@ -2744,7 +3047,7 @@ class _PinKey extends StatelessWidget {
     required this.label,
     required this.onTap,
     this.fontSize = 32,
-    this.fontWeight = FontWeight.w600,
+    this.fontWeight = FontWeight.w700,
     this.letterSpacing = 0,
   });
 
@@ -2830,7 +3133,7 @@ class _TransferFailurePopup extends StatelessWidget {
                       key: const Key('transfer-failure-home-confirm'),
                       onPressed: () => Navigator.of(context).pop(),
                       style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFF035CF8),
+                        backgroundColor: _green,
                         minimumSize: const Size.fromHeight(67),
                         maximumSize: const Size.fromHeight(67),
                         shape: RoundedRectangleBorder(

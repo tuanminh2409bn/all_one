@@ -7,11 +7,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:all_one/core/app_data.dart';
 import 'package:all_one/core/auth_service.dart';
+import 'package:all_one/ui/account_details_screen.dart';
 import 'package:all_one/ui/app_loading_transition.dart';
 import 'package:all_one/ui/certificate_login_screen.dart';
 import 'package:all_one/ui/home_screen.dart';
+import 'package:all_one/ui/limit_release_screen.dart';
 import 'package:all_one/ui/pin_screen.dart';
 import 'package:all_one/ui/splash_screen.dart';
+import 'package:all_one/ui/transfer_recipient_screen.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -281,6 +284,12 @@ void main() {
     expect(find.byKey(const Key('home-top-reference')), findsNothing);
     expect(find.byKey(const Key('home-bottom-navigation')), findsOneWidget);
     expect(find.byKey(const Key('home-daily-point-hand')), findsOneWidget);
+    final accountLogo = find.byKey(const Key('home-account-logo'));
+    expect(tester.getSize(accountLogo), const Size.square(48));
+    expect(
+      tester.widget<ClipRRect>(accountLogo).borderRadius,
+      BorderRadius.circular(14),
+    );
     expect(find.text('매일 포인트 용돈 받기'), findsOneWidget);
     expect(find.text('쓸수록 혜택받기'), findsNothing);
     expect(
@@ -321,6 +330,323 @@ void main() {
     expect(
       tester.getTopLeft(find.byKey(const Key('home-bottom-navigation'))),
       navigationTop,
+    );
+  });
+
+  testWidgets('limit release action opens a fixed-header scrollable guide', (
+    tester,
+  ) async {
+    _configureMockupViewport(tester);
+    await tester.pumpWidget(
+      _TestHost(
+        home: HomeScreen(
+          auth: AuthService(),
+          dataStore: AppDataStore.inMemory(withMockData: false),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(OutlinedButton, '한도해제'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(LimitReleaseScreen), findsOneWidget);
+    expect(find.text('한도제한 해제(NH농협은행)'), findsOneWidget);
+    expect(find.text('계좌 선택'), findsOneWidget);
+    expect(find.text('NH올원모임통장'), findsOneWidget);
+    expect(find.text('NH농협은행 302-2180-4371-91'), findsOneWidget);
+    expect(find.text('알아두세요'), findsOneWidget);
+    expect(find.byKey(const ValueKey('limit-release-info-0')), findsOneWidget);
+
+    final title = find.byKey(const Key('limit-release-title'));
+    final titleTop = tester.getTopLeft(title);
+    await tester.drag(
+      find.byKey(const Key('limit-release-scroll')),
+      const Offset(0, -520),
+    );
+    await tester.pumpAndSettle();
+
+    final scrollable = tester.state<ScrollableState>(
+      find
+          .descendant(
+            of: find.byKey(const Key('limit-release-scroll')),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    expect(scrollable.position.pixels, greaterThan(100));
+    expect(tester.getTopLeft(title), titleTop);
+    expect(find.byKey(const ValueKey('limit-release-info-6')), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.byKey(const ValueKey('limit-release-info-6'))).dy,
+      lessThan(1280),
+    );
+
+    await tester.tap(find.byKey(const Key('limit-release-back')));
+    await tester.pumpAndSettle();
+    expect(find.byType(HomeScreen), findsOneWidget);
+  });
+
+  testWidgets('middle account action opens sticky transaction history', (
+    tester,
+  ) async {
+    _configureMockupViewport(tester);
+    await tester.pumpWidget(
+      _TestHost(
+        home: HomeScreen(
+          auth: AuthService(),
+          dataStore: AppDataStore.inMemory(withMockData: false),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(OutlinedButton, '거래내역'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AccountDetailsScreen), findsOneWidget);
+    expect(find.text('거래내역조회'), findsOneWidget);
+    expect(find.text('NH올원모임통장'), findsOneWidget);
+    expect(find.text('계좌관리'), findsOneWidget);
+    expect(find.text('이체'), findsOneWidget);
+    expect(find.text('뚜레쥬르'), findsOneWidget);
+    expect(find.text('1개월 · 전체 · 최신순'), findsOneWidget);
+    expect(find.text('거래내역이 없습니다.'), findsOneWidget);
+
+    final title = find.byKey(const Key('account-details-title'));
+    final accountType = find.byKey(const Key('account-type-text'));
+    final titleTop = tester.getTopLeft(title);
+    final accountTypeTop = tester.getTopLeft(accountType);
+    await tester.drag(
+      find.byKey(const Key('account-details-scroll')),
+      const Offset(0, -430),
+    );
+    await tester.pumpAndSettle();
+
+    final scrollable = tester.state<ScrollableState>(
+      find
+          .descendant(
+            of: find.byKey(const Key('account-details-scroll')),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    expect(scrollable.position.pixels, greaterThan(360));
+    expect(tester.getTopLeft(title), titleTop);
+    expect(tester.getTopLeft(accountType), accountTypeTop);
+    expect(
+      find.byKey(const Key('account-history-filter-collapsed')),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byKey(const Key('account-back')));
+    await tester.pumpAndSettle();
+    expect(find.byType(HomeScreen), findsOneWidget);
+  });
+
+  testWidgets('third account action opens recipient and institution picker', (
+    tester,
+  ) async {
+    _configureMockupViewport(tester);
+    await tester.pumpWidget(
+      _TestHost(
+        home: HomeScreen(
+          auth: AuthService(),
+          dataStore: AppDataStore.inMemory(withMockData: false),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(OutlinedButton, '이체'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(TransferRecipientScreen), findsOneWidget);
+    expect(find.text('누구에게 보낼까요?'), findsOneWidget);
+    expect(find.text('계좌번호를 입력해 주세요'), findsOneWidget);
+    expect(find.text('은행을 선택해 주세요'), findsOneWidget);
+    expect(find.text('최근 이체 내역이 없습니다.'), findsOneWidget);
+    expect(find.byKey(const Key('transfer-cancel')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('transfer-bank-selector')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('은행/증권사 선택'), findsOneWidget);
+    expect(find.text('NH농협'), findsOneWidget);
+    expect(find.text('국민은행'), findsOneWidget);
+    expect(find.byKey(const Key('bank-selector-list-banks')), findsOneWidget);
+    expect(
+      tester.getCenter(find.text('NH농협')).dy,
+      closeTo(tester.getCenter(find.text('국민은행')).dy, 1),
+    );
+
+    final pickerTitle = find.text('은행/증권사 선택');
+    final pickerTitleTop = tester.getTopLeft(pickerTitle);
+    await tester.drag(
+      find.byKey(const Key('bank-selector-list-banks')),
+      const Offset(0, -470),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.getTopLeft(pickerTitle), pickerTitleTop);
+    expect(find.text('지방세입'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('bank-selector-close')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('transfer-bank-selector')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('bank-tab-증권사')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('bank-selector-list-securities')),
+      findsOneWidget,
+    );
+    expect(find.text('NH투자증권'), findsOneWidget);
+    expect(find.text('교보증권'), findsOneWidget);
+    expect(find.text('BNK증권'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('bank-selector-close')));
+    await tester.pumpAndSettle();
+    expect(find.text('누구에게 보낼까요?'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('transfer-back')));
+    await tester.pumpAndSettle();
+    expect(find.byType(HomeScreen), findsOneWidget);
+  });
+
+  testWidgets('transfer flow uses green and respects Android navigation', (
+    tester,
+  ) async {
+    const appGreen = Color(0xFF159757);
+    _configureMockupViewport(tester);
+    tester.view.padding = const FakeViewPadding(bottom: 68);
+    tester.view.viewPadding = const FakeViewPadding(bottom: 68);
+    addTearDown(tester.view.resetPadding);
+    addTearDown(tester.view.resetViewPadding);
+
+    final store = AppDataStore.inMemory(withMockData: false);
+    addTearDown(store.dispose);
+    await store.createAccount(
+      bankCode: '신한',
+      bankDisplayName: '저축예금',
+      ownerName: 'BUI PHUONG',
+      accountNumber: '3022180437191',
+      accountType: '저축예금',
+      openingBalance: 20000,
+    );
+
+    await tester.pumpWidget(
+      _TestHost(
+        home: TransferRecipientScreen(
+          dataStore: store,
+          initialPinKeys: const [
+            '2',
+            '3',
+            '6',
+            '8',
+            '0',
+            '9',
+            '4',
+            '7',
+            '1',
+            '5',
+          ],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const Key('transfer-account-input')),
+      '100237698805',
+    );
+    await tester.tap(find.byKey(const Key('transfer-bank-selector')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('bank-농협')));
+    await tester.pumpAndSettle();
+
+    FilledButton nextButton() =>
+        tester.widget<FilledButton>(find.byKey(const Key('transfer-next')));
+    expect(
+      nextButton().style?.backgroundColor?.resolve(<WidgetState>{}),
+      appGreen,
+    );
+
+    await tester.tap(find.byKey(const Key('transfer-next')));
+    await tester.pumpAndSettle();
+
+    const safeBottom = 1280 - 68;
+    expect(find.text('얼마를 보낼까요?'), findsOneWidget);
+    expect(
+      tester.getBottomRight(find.byKey(const Key('transfer-next'))).dy,
+      lessThanOrEqualTo(safeBottom),
+    );
+    expect(
+      tester.getBottomRight(find.byKey(const Key('amount-key-00'))).dy,
+      lessThanOrEqualTo(safeBottom),
+    );
+
+    final oneLabel = tester.widget<Text>(
+      find.descendant(
+        of: find.byKey(const Key('amount-key-1')),
+        matching: find.text('1'),
+      ),
+    );
+    expect(oneLabel.style?.fontWeight, FontWeight.w500);
+
+    await tester.tap(find.byKey(const Key('amount-key-2')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('transfer-next')));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('보낼까요?'), findsOneWidget);
+    expect(
+      tester.getBottomRight(find.byKey(const Key('transfer-next'))).dy,
+      lessThanOrEqualTo(safeBottom),
+    );
+    expect(
+      nextButton().style?.backgroundColor?.resolve(<WidgetState>{}),
+      appGreen,
+    );
+
+    await tester.tap(find.byKey(const Key('transfer-next')));
+    await tester.pumpAndSettle();
+
+    expect(
+      tester
+          .widget<ColoredBox>(
+            find.byKey(const Key('transfer-pin-keypad-background')),
+          )
+          .color,
+      appGreen,
+    );
+    final pinTwoLabel = tester.widget<Text>(
+      find.descendant(
+        of: find.byKey(const Key('transfer-pin-key-2')),
+        matching: find.text('2'),
+      ),
+    );
+    expect(pinTwoLabel.style?.fontWeight, FontWeight.w700);
+
+    await tester.tap(find.byKey(const Key('transfer-pin-key-2')));
+    await tester.pump();
+    final firstIndicator = tester.widget<Container>(
+      find.byKey(const Key('transfer-pin-indicator-0')),
+    );
+    expect((firstIndicator.decoration as BoxDecoration).color, appGreen);
+
+    for (final digit in ['3', '6', '8']) {
+      await tester.tap(find.byKey(Key('transfer-pin-key-$digit')));
+      await tester.pump();
+    }
+    await tester.pumpAndSettle();
+
+    final failureButton = tester.widget<FilledButton>(
+      find.byKey(const Key('transfer-failure-home-confirm')),
+    );
+    expect(
+      failureButton.style?.backgroundColor?.resolve(<WidgetState>{}),
+      appGreen,
     );
   });
 

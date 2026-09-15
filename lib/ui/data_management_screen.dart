@@ -35,17 +35,20 @@ class DataManagementScreen extends StatelessWidget {
             ],
           ),
         ),
-        body: AnimatedBuilder(
-          animation: store,
-          builder: (context, _) => TabBarView(
-            children: [
-              _AccountsPanel(store: store),
-              _TransactionsPanel(
-                store: store,
-                initialAccountId: initialAccountId,
-              ),
-              _RecipientsPanel(store: store),
-            ],
+        body: SafeArea(
+          top: false,
+          child: AnimatedBuilder(
+            animation: store,
+            builder: (context, _) => TabBarView(
+              children: [
+                _AccountsPanel(store: store),
+                _TransactionsPanel(
+                  store: store,
+                  initialAccountId: initialAccountId,
+                ),
+                _RecipientsPanel(store: store),
+              ],
+            ),
           ),
         ),
       ),

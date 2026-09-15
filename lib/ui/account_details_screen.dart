@@ -12,17 +12,6 @@ const _detailsInk = Color(0xFF141820);
 const _detailsMuted = Color(0xFF626B79);
 const _detailsSecondary = Color(0xFF505866);
 const _detailsBlue = Color(0xFF0068F5);
-const _detailsDivider = Color(0xFFF1F4F8);
-const _detailsAccountNumber = Color(0xFF505866);
-const _detailsAccountLogoSize = 52.0;
-const _detailsAccountTypeWidth = 427.0;
-const _detailsAccountTypeStyle = TextStyle(
-  color: Color(0xFF2D323C),
-  fontFamily: 'NotoSansKR',
-  fontSize: 22,
-  fontWeight: FontWeight.w600,
-  letterSpacing: -1,
-);
 
 enum _HistoryPeriodMode { monthly, range }
 
@@ -50,8 +39,8 @@ class _HistoryFilter {
     final today = DateTime(now.year, now.month, now.day);
     return _HistoryFilter(
       periodMode: _HistoryPeriodMode.range,
-      rangePreset: _HistoryRangePreset.threeMonths,
-      startDate: _subtractMonths(today, 3),
+      rangePreset: _HistoryRangePreset.month,
+      startDate: _subtractMonths(today, 1),
       endDate: today,
       month: DateTime(today.year, today.month),
       type: _HistoryType.all,
@@ -120,6 +109,18 @@ class _HistoryFilter {
   String get sortLabel => sort == _HistorySort.newest ? '최신순' : '과거순';
 
   String get summaryLabel => '$periodLabel · $typeLabel · $sortLabel';
+
+  String get rangeLabel {
+    String date(DateTime value) =>
+        '${value.year}.${value.month.toString().padLeft(2, '0')}.'
+        '${value.day.toString().padLeft(2, '0')}';
+    if (periodMode == _HistoryPeriodMode.monthly) {
+      final start = DateTime(month.year, month.month);
+      final end = DateTime(month.year, month.month + 1, 0);
+      return '${date(start)} ~ ${date(end)}';
+    }
+    return '${date(startDate)} ~ ${date(endDate)}';
+  }
 
   List<LedgerTransaction> apply(List<LedgerTransaction> source) {
     final filtered = source.where((transaction) {
@@ -246,14 +247,6 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
     }
   }
 
-  Future<void> _scrollToTop() {
-    return _scrollController.animateTo(
-      0,
-      duration: const Duration(milliseconds: 420),
-      curve: Curves.easeOutCubic,
-    );
-  }
-
   Future<void> _openTransferRecipient() async {
     final result = await Navigator.of(context).push<TransferFlowResult>(
       MaterialPageRoute<TransferFlowResult>(
@@ -343,26 +336,18 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final accountLabel = widget.auth.isSignedIn
-        ? widget.auth.displayName
-        : 'TÀI KHOẢN';
     final account = _selectedAccount;
-    final accountType = _displayAccountType(account?.accountType);
-    final accountSummaryOffset = _accountTypeWrapOffset(accountType);
     final allTransactions = account == null
         ? const <LedgerTransaction>[]
         : widget.dataStore.transactionsFor(account.id);
     final transactions = _historyFilter.apply(allTransactions);
     final requiredContentHeight =
-        _TransactionLayoutMetrics.contentBottom(
-          transactions,
-          verticalOffset: accountSummaryOffset,
-        ) +
+        _TransactionLayoutMetrics.contentBottom(transactions) +
         _TransactionLayoutMetrics.bottomPadding;
-    final contentHeight = requiredContentHeight > 1780
+    final contentHeight = requiredContentHeight > 1700
         ? requiredContentHeight
-        : 1780.0;
-    final collapsed = _scrollOffset >= 340;
+        : 1700.0;
+    final collapsed = _scrollOffset >= 360;
 
     return DesignCanvas(
       backgroundColor: Colors.white,
@@ -380,21 +365,18 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
                 child: Stack(
                   children: [
                     _AccountSummary(
-                      account: account,
-                      accountType: accountType,
                       balance: account == null
                           ? 0
                           : widget.dataStore.balanceFor(account.id),
-                      verticalOffset: accountSummaryOffset,
+                      onManage: _openManagement,
                       onTransfer: _openTransferRecipient,
                     ),
                     _TransactionList(
-                      accountName: accountLabel,
                       account: account,
                       transactions: transactions,
                       store: widget.dataStore,
-                      verticalOffset: accountSummaryOffset,
                       filterLabel: _historyFilter.summaryLabel,
+                      rangeLabel: _historyFilter.rangeLabel,
                       onFilterTap: _openHistoryFilter,
                       showTransactionBalances: _showTransactionBalances,
                       onBalanceVisibilityTap: _toggleTransactionBalances,
@@ -408,65 +390,26 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
             left: 0,
             right: 0,
             top: 0,
-            height: collapsed ? 199 : 185,
+            height: 301,
             child: const ColoredBox(color: Colors.white),
           ),
           if (collapsed) ...[
             const Positioned(
               left: 0,
               right: 0,
-              top: 184,
-              height: 15,
-              child: ColoredBox(color: _detailsDivider),
-            ),
-            const Positioned(
-              left: 0,
-              right: 0,
-              top: 199,
-              height: 82,
-              child: ColoredBox(color: Colors.white),
+              top: 301,
+              height: 66,
+              child: ColoredBox(color: Color(0xFFF6F6F6)),
             ),
             _FilterBar(
-              top: 214,
+              top: 301,
               filterKey: const Key('account-history-filter-collapsed'),
               label: _historyFilter.summaryLabel,
               onTap: _openHistoryFilter,
             ),
           ],
-          _DetailsHeader(
-            onBack: _goHome,
-            onHome: _goHome,
-            onManage: _openManagement,
-          ),
-          if (collapsed)
-            Positioned(
-              right: 29,
-              bottom: 48,
-              width: 68,
-              height: 68,
-              child: DecoratedBox(
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Color(0x22000000),
-                      blurRadius: 18,
-                      offset: Offset(0, 6),
-                    ),
-                  ],
-                ),
-                child: IconButton(
-                  key: const Key('account-scroll-top'),
-                  onPressed: _scrollToTop,
-                  icon: const Icon(
-                    Icons.arrow_upward_rounded,
-                    size: 31,
-                    color: _detailsInk,
-                  ),
-                ),
-              ),
-            ),
+          _AccountIdentity(account: account),
+          _DetailsHeader(onBack: _goHome, onHome: _goHome),
         ],
       ),
     );
@@ -474,76 +417,147 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
 }
 
 class _DetailsHeader extends StatelessWidget {
-  const _DetailsHeader({
-    required this.onBack,
-    required this.onHome,
-    required this.onManage,
-  });
+  const _DetailsHeader({required this.onBack, required this.onHome});
 
   final VoidCallback onBack;
   final VoidCallback onHome;
-  final VoidCallback onManage;
 
   @override
   Widget build(BuildContext context) {
     return Positioned(
       left: 0,
       right: 0,
-      top: 104,
-      height: 66,
+      top: 76,
+      height: 58,
       child: Stack(
         children: [
           Positioned(
-            left: 27,
-            top: 2,
+            left: 26,
+            top: 0,
             width: 50,
             height: 50,
             child: IconButton(
               key: const Key('account-back'),
+              tooltip: '뒤로',
               onPressed: onBack,
               padding: EdgeInsets.zero,
               icon: const Icon(
-                Icons.arrow_back_ios_new_rounded,
-                size: 28,
+                Icons.arrow_back_rounded,
+                size: 32,
                 color: _detailsInk,
               ),
             ),
           ),
-          Positioned(
-            right: 78,
-            top: 2,
-            width: 94,
-            height: 50,
-            child: TextButton(
-              key: const Key('account-manage'),
-              onPressed: onManage,
-              style: TextButton.styleFrom(
-                padding: EdgeInsets.zero,
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-              child: const Text(
-                '계좌관리',
-                style: TextStyle(
-                  color: _detailsBlue,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: -.8,
-                ),
+          const Positioned(
+            left: 135,
+            right: 135,
+            top: 6,
+            child: Text(
+              '거래내역조회',
+              key: Key('account-details-title'),
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: _detailsInk,
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -1,
               ),
             ),
           ),
           Positioned(
-            right: 19,
-            top: 5,
+            right: 76,
+            top: 0,
             width: 50,
             height: 50,
             child: IconButton(
               key: const Key('account-home'),
+              tooltip: '홈',
               onPressed: onHome,
               padding: EdgeInsets.zero,
               icon: const _AccountHomeIcon(key: Key('account-home-glyph')),
             ),
+          ),
+          Positioned(
+            right: 23,
+            top: 6,
+            child: Semantics(
+              label: '메뉴 검색',
+              image: true,
+              child: const _AccountMenuSearchIcon(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AccountIdentity extends StatelessWidget {
+  const _AccountIdentity({required this.account});
+
+  final BankAccount? account;
+
+  @override
+  Widget build(BuildContext context) {
+    final accountType = account?.accountType ?? 'NH올원모임통장';
+    final bank = account?.bankDisplayName ?? 'NH농협은행';
+    final number = account?.accountNumber ?? '302-2180-4371-91';
+    return Positioned(
+      left: 35,
+      right: 35,
+      top: 202,
+      height: 66,
+      child: Row(
+        children: [
+          ClipRRect(
+            key: const Key('account-details-logo'),
+            borderRadius: BorderRadius.circular(16),
+            child: SizedBox.square(
+              dimension: 58,
+              child: account == null || account!.bankCode == '농협'
+                  ? const _AccountNhMark()
+                  : BankLogo(bankCode: account!.bankCode, size: 58),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  key: const Key('account-type-text'),
+                  accountType,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: _detailsInk,
+                    fontSize: 23,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -1,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  key: const Key('account-number-text'),
+                  '$bank  $number',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: _detailsMuted,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: -0.55,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          const Icon(
+            Icons.keyboard_arrow_down_rounded,
+            size: 29,
+            color: _detailsInk,
           ),
         ],
       ),
@@ -553,175 +567,241 @@ class _DetailsHeader extends StatelessWidget {
 
 class _AccountSummary extends StatelessWidget {
   const _AccountSummary({
-    required this.account,
-    required this.accountType,
     required this.balance,
-    required this.verticalOffset,
+    required this.onManage,
     required this.onTransfer,
   });
 
-  final BankAccount? account;
-  final String accountType;
   final int balance;
-  final double verticalOffset;
+  final VoidCallback onManage;
   final VoidCallback onTransfer;
 
   @override
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        Positioned(
-          left: 28,
-          top: 201,
-          width: 83,
-          height: 33,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: const Color(0xFF344052),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: const Center(
-              child: Text(
-                '한도계좌',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ),
-        ),
-        Positioned(
-          left: 28,
-          top: 245,
-          width: _detailsAccountLogoSize,
-          height: _detailsAccountLogoSize,
-          child: account == null
-              ? const Icon(Icons.account_balance_rounded)
-              : BankLogo(
-                  key: const Key('account-details-logo'),
-                  bankCode: account!.bankCode,
-                  size: _detailsAccountLogoSize,
-                ),
-        ),
-        Positioned(
-          left: 90,
-          top: 243,
-          width: _detailsAccountTypeWidth,
-          child: Text(
-            key: const Key('account-type-text'),
-            accountType,
-            softWrap: true,
-            style: _detailsAccountTypeStyle,
-          ),
-        ),
-        Positioned(
-          left: 90,
-          right: 72,
-          top: 285 + verticalOffset,
-          child: Row(
-            children: [
-              Flexible(
-                child: Text(
-                  key: const Key('account-number-text'),
-                  account == null
-                      ? '-'
-                      : '${account!.bankDisplayName} ${account!.accountNumber}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: _detailsAccountNumber,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w500,
-                    fontVariations: [FontVariation('wght', 500)],
-                    letterSpacing: -.5,
-                  ),
-                ),
-              ),
-              if (account != null) ...[
-                const SizedBox(width: 5),
-                GestureDetector(
-                  key: const Key('account-copy'),
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () => Clipboard.setData(
-                    ClipboardData(text: account!.accountNumber),
-                  ),
-                  child: const _AccountCopyIcon(key: Key('account-copy-glyph')),
-                ),
-              ],
-            ],
-          ),
-        ),
         const Positioned(
-          right: 30,
-          top: 245,
-          child: _AccountScanIcon(key: Key('account-scan-icon')),
+          left: 35,
+          top: 309,
+          child: Text(
+            '잔액',
+            style: TextStyle(
+              color: _detailsSecondary,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              letterSpacing: -0.6,
+            ),
+          ),
         ),
         Positioned(
-          left: 28,
-          top: 330 + verticalOffset,
+          right: 36,
+          top: 305,
           child: Text(
             key: const Key('account-balance-text'),
             '${_formatDetailsMoney(balance)}원',
             style: const TextStyle(
               color: _detailsInk,
-              fontSize: 34,
-              fontWeight: FontWeight.w600,
-              letterSpacing: -1.5,
+              fontSize: 28,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -1.1,
             ),
           ),
         ),
         Positioned(
-          left: 28,
-          top: 381 + verticalOffset,
-          child: Text(
-            key: const Key('account-available-balance-text'),
-            '출금가능금액 ${_formatDetailsMoney(balance)}원',
-            style: const TextStyle(
-              color: _detailsSecondary,
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-              fontVariations: [FontVariation('wght', 500)],
-              letterSpacing: -.5,
-            ),
+          left: 35,
+          top: 377,
+          width: 253,
+          height: 61,
+          child: _AccountActionButton(
+            key: const Key('account-manage'),
+            label: '계좌관리',
+            onTap: onManage,
           ),
         ),
         Positioned(
-          left: 28,
-          top: 432 + verticalOffset,
-          width: 533,
-          height: 68,
-          child: GestureDetector(
+          right: 35,
+          top: 377,
+          width: 253,
+          height: 61,
+          child: _AccountActionButton(
             key: const Key('account-transfer'),
-            behavior: HitTestBehavior.opaque,
+            label: '이체',
+            accent: true,
             onTap: onTransfer,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: const Color(0xFFF0F4FF),
-                borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+        const Positioned(
+          left: 35,
+          right: 35,
+          top: 486,
+          height: 127,
+          child: _TransactionBanner(),
+        ),
+      ],
+    );
+  }
+}
+
+class _AccountActionButton extends StatelessWidget {
+  const _AccountActionButton({
+    super.key,
+    required this.label,
+    required this.onTap,
+    this.accent = false,
+  });
+
+  final String label;
+  final VoidCallback onTap;
+  final bool accent;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton(
+      onPressed: onTap,
+      style: OutlinedButton.styleFrom(
+        padding: EdgeInsets.zero,
+        foregroundColor: accent ? const Color(0xFF16A05A) : _detailsInk,
+        side: BorderSide(
+          color: accent ? const Color(0xFF16A05A) : const Color(0xFFD5D7D7),
+          width: 1.25,
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 22,
+          fontWeight: FontWeight.w600,
+          letterSpacing: -0.8,
+        ),
+      ),
+    );
+  }
+}
+
+class _TransactionBanner extends StatelessWidget {
+  const _TransactionBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(22),
+      child: ColoredBox(
+        color: const Color(0xFFF5F5F5),
+        child: Stack(
+          children: [
+            const Positioned(
+              left: 62,
+              top: 33,
+              child: Text(
+                '뚜레쥬르',
+                style: TextStyle(
+                  color: Color(0xFF3A3B3C),
+                  fontSize: 23,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.8,
+                ),
               ),
-              child: const Center(
-                child: Text(
-                  '이체',
-                  style: TextStyle(
-                    color: _detailsBlue,
-                    fontSize: 23,
-                    fontWeight: FontWeight.w700,
+            ),
+            const Positioned(
+              left: 50,
+              top: 68,
+              child: Text(
+                '사전예약 최대',
+                style: TextStyle(
+                  color: Color(0xFF686B6C),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -0.6,
+                ),
+              ),
+            ),
+            Positioned(
+              left: 187,
+              top: 10,
+              width: 161,
+              height: 107,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.asset(
+                  'assets/images/transaction_tlj_cakes.jpg',
+                  fit: BoxFit.cover,
+                  filterQuality: FilterQuality.high,
+                ),
+              ),
+            ),
+            const Positioned(
+              right: 42,
+              top: 33,
+              child: Text(
+                '추석 선물',
+                style: TextStyle(
+                  color: Color(0xFF3A3B3C),
+                  fontSize: 23,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.8,
+                ),
+              ),
+            ),
+            const Positioned(
+              right: 43,
+              top: 67,
+              child: Text(
+                '30%OFF',
+                style: TextStyle(
+                  color: Color(0xFFF0442D),
+                  fontSize: 21,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.4,
+                ),
+              ),
+            ),
+            Positioned(
+              right: 9,
+              top: 8,
+              child: Container(
+                width: 23,
+                height: 23,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFB9BABA),
+                  shape: BoxShape.circle,
+                ),
+                child: const Center(
+                  child: Text(
+                    'i',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AccountNhMark extends StatelessWidget {
+  const _AccountNhMark();
+
+  @override
+  Widget build(BuildContext context) {
+    return const ColoredBox(
+      color: Color(0xFF0875BE),
+      child: Center(
+        child: Text(
+          'NH',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
           ),
         ),
-        Positioned(
-          left: 0,
-          right: 0,
-          top: 534 + verticalOffset,
-          height: 15,
-          child: const ColoredBox(color: _detailsDivider),
-        ),
-      ],
+      ),
     );
   }
 }
@@ -770,124 +850,57 @@ class _AccountHomePainter extends CustomPainter {
   bool shouldRepaint(_AccountHomePainter oldDelegate) => false;
 }
 
-class _AccountScanIcon extends StatelessWidget {
-  const _AccountScanIcon({super.key});
+class _AccountMenuSearchIcon extends StatelessWidget {
+  const _AccountMenuSearchIcon();
 
   @override
   Widget build(BuildContext context) {
     return const SizedBox.square(
-      dimension: 30,
-      child: CustomPaint(painter: _AccountScanPainter()),
+      dimension: 37,
+      child: CustomPaint(painter: _AccountMenuSearchPainter()),
     );
   }
 }
 
-class _AccountCopyIcon extends StatelessWidget {
-  const _AccountCopyIcon({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const SizedBox.square(
-      dimension: 15,
-      child: CustomPaint(painter: _AccountCopyPainter()),
-    );
-  }
-}
-
-class _AccountCopyPainter extends CustomPainter {
-  const _AccountCopyPainter();
+class _AccountMenuSearchPainter extends CustomPainter {
+  const _AccountMenuSearchPainter();
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = _detailsAccountNumber
+    final stroke = Paint()
+      ..color = _detailsInk
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.35
-      ..strokeCap = StrokeCap.square
-      ..strokeJoin = StrokeJoin.miter;
-
-    // The source-app glyph is not two complete overlapping rectangles. The
-    // rear sheet is visible only as its upper and right edges, while the front
-    // sheet is a closed square. Keeping those paths separate preserves the
-    // crisp negative space visible in the original mockup at this small size.
-    final rearSheet = Path()
-      ..moveTo(4.65, 1.45)
-      ..lineTo(13.45, 1.45)
-      ..lineTo(13.45, 10.25);
-    canvas.drawPath(rearSheet, paint);
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        const Rect.fromLTWH(1.55, 4.55, 8.9, 8.9),
-        const Radius.circular(.35),
-      ),
-      paint,
-    );
+      ..strokeWidth = 2.5
+      ..strokeCap = StrokeCap.round
+      ..isAntiAlias = true;
+    for (final y in <double>[7, 15, 23]) {
+      canvas.drawLine(Offset(2, y), Offset(28, y), stroke);
+    }
+    canvas.drawCircle(const Offset(27.5, 26), 6, stroke);
+    canvas.drawLine(const Offset(32, 30.5), const Offset(35.5, 34), stroke);
   }
 
   @override
-  bool shouldRepaint(_AccountCopyPainter oldDelegate) => false;
-}
-
-class _AccountScanPainter extends CustomPainter {
-  const _AccountScanPainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = _detailsInk
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.2
-      ..strokeCap = StrokeCap.square
-      ..strokeJoin = StrokeJoin.miter;
-
-    final corners = Path()
-      ..moveTo(4.5, 10.5)
-      ..lineTo(4.5, 4)
-      ..lineTo(11, 4)
-      ..moveTo(19, 4)
-      ..lineTo(25.5, 4)
-      ..lineTo(25.5, 10.5)
-      ..moveTo(25.5, 19.5)
-      ..lineTo(25.5, 27)
-      ..lineTo(19, 27)
-      ..moveTo(11, 27)
-      ..lineTo(4.5, 27)
-      ..lineTo(4.5, 19.5);
-    canvas.drawPath(corners, paint);
-
-    final plusPaint = Paint()
-      ..color = _detailsInk
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2
-      ..strokeCap = StrokeCap.round;
-    canvas
-      ..drawLine(const Offset(11, 15), const Offset(19, 15), plusPaint)
-      ..drawLine(const Offset(15, 11), const Offset(15, 19), plusPaint);
-  }
-
-  @override
-  bool shouldRepaint(_AccountScanPainter oldDelegate) => false;
+  bool shouldRepaint(_AccountMenuSearchPainter oldDelegate) => false;
 }
 
 class _TransactionList extends StatelessWidget {
   const _TransactionList({
-    required this.accountName,
     required this.account,
     required this.transactions,
     required this.store,
-    required this.verticalOffset,
     required this.filterLabel,
+    required this.rangeLabel,
     required this.onFilterTap,
     required this.showTransactionBalances,
     required this.onBalanceVisibilityTap,
   });
 
-  final String accountName;
   final BankAccount? account;
   final List<LedgerTransaction> transactions;
   final AppDataStore store;
-  final double verticalOffset;
   final String filterLabel;
+  final String rangeLabel;
   final VoidCallback onFilterTap;
   final bool showTransactionBalances;
   final VoidCallback onBalanceVisibilityTap;
@@ -897,18 +910,38 @@ class _TransactionList extends StatelessWidget {
     return Stack(
       children: [
         _FilterBar(
-          top: 558 + verticalOffset,
+          top: 670,
           filterKey: const Key('account-history-filter'),
           label: filterLabel,
           onTap: onFilterTap,
         ),
         Positioned(
-          right: 28,
-          top: 615 + verticalOffset,
+          left: 35,
+          top: 758,
+          child: Text(
+            key: const Key('account-history-range'),
+            rangeLabel,
+            style: const TextStyle(
+              color: _detailsSecondary,
+              fontSize: 19.5,
+              fontWeight: FontWeight.w600,
+              letterSpacing: -0.55,
+            ),
+          ),
+        ),
+        Positioned(
+          right: 35,
+          top: 754,
           child: _BalanceVisibilityToggle(
             isVisible: showTransactionBalances,
             onTap: onBalanceVisibilityTap,
           ),
+        ),
+        const Positioned(
+          left: 35,
+          right: 35,
+          top: 845,
+          child: Divider(height: 1, thickness: 1, color: Color(0xFFE2E3E3)),
         ),
         ..._transactionWidgets(),
       ],
@@ -921,65 +954,30 @@ class _TransactionList extends StatelessWidget {
         Positioned(
           left: 0,
           right: 0,
-          top: 680 + verticalOffset,
+          top: 892,
           child: const Text(
             '거래내역이 없습니다.',
             textAlign: TextAlign.center,
-            style: TextStyle(color: _detailsMuted, fontSize: 18),
+            style: TextStyle(
+              color: _detailsMuted,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
       ];
     }
     final widgets = <Widget>[];
-    var cursor = _TransactionLayoutMetrics.firstRowTop + verticalOffset;
-    String? previousDate;
+    var cursor = _TransactionLayoutMetrics.firstRowTop;
     for (final transaction in transactions) {
-      final dateKey = _TransactionLayoutMetrics.dateKey(transaction);
-      if (dateKey != previousDate) {
-        if (previousDate != null) {
-          widgets.add(
-            Positioned(
-              left: 28,
-              right: 28,
-              top: cursor + 4,
-              child: const Divider(height: 1, color: Color(0xFFE8EBF0)),
-            ),
-          );
-          cursor += _TransactionLayoutMetrics.dayDividerExtent;
-        }
-        widgets.add(
-          Positioned(
-            left: 28,
-            top: cursor,
-            child: Text(
-              key: Key('account-transaction-date-$dateKey'),
-              '${transaction.occurredAt.month}월 '
-              '${transaction.occurredAt.day}일',
-              style: const TextStyle(
-                color: _detailsSecondary,
-                fontSize: 18,
-                fontWeight: FontWeight.w500,
-                fontVariations: [FontVariation('wght', 500)],
-                letterSpacing: -.6,
-              ),
-            ),
-          ),
-        );
-        cursor += _TransactionLayoutMetrics.dateHeaderExtent;
-        previousDate = dateKey;
-      }
       final signed = transaction.signedAmount;
       widgets.add(
         _TransactionRow(
           top: cursor,
           title: transaction.title,
           transactionId: transaction.id,
-          time:
-              '${_formatDetailsTime(transaction.occurredAt)} · '
-              '${transaction.channel}',
-          amount:
-              '${signed >= 0 ? '+' : '-'}'
-              '${_formatDetailsMoney(signed.abs())}원',
+          dateTime: _formatDetailsDateTime(transaction.occurredAt),
+          amount: '${_formatDetailsMoney(signed.abs())}원',
           balance:
               '${_formatDetailsMoney(store.runningBalanceFor(transaction))}원',
           showBalance: showTransactionBalances,
@@ -1011,59 +1009,50 @@ class _BalanceVisibilityToggle extends StatelessWidget {
         key: const Key('account-balance-visibility-toggle'),
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
-        child: AnimatedContainer(
-          key: const Key('account-balance-visibility-track'),
-          duration: const Duration(milliseconds: 160),
-          curve: Curves.easeOut,
-          width: 72,
-          height: 36,
-          decoration: BoxDecoration(
-            color: isVisible ? _detailsBlue : const Color(0xFF8E98A8),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Stack(
-            children: [
-              AnimatedAlign(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              isVisible ? '잔액 숨기기' : '잔액 보기',
+              style: const TextStyle(
+                color: _detailsInk,
+                fontSize: 19,
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.7,
+              ),
+            ),
+            const SizedBox(width: 10),
+            AnimatedContainer(
+              key: const Key('account-balance-visibility-track'),
+              duration: const Duration(milliseconds: 160),
+              curve: Curves.easeOut,
+              width: 43,
+              height: 29,
+              decoration: BoxDecoration(
+                color: isVisible
+                    ? const Color(0xFF8D8F90)
+                    : const Color(0xFF16A05A),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: AnimatedAlign(
+                key: const Key('account-balance-visibility-knob'),
                 duration: const Duration(milliseconds: 160),
                 curve: Curves.easeOut,
                 alignment: isVisible
                     ? Alignment.centerLeft
                     : Alignment.centerRight,
-                child: Padding(
-                  padding: EdgeInsets.only(
-                    left: isVisible ? 11 : 0,
-                    right: isVisible ? 0 : 10,
-                  ),
-                  child: const Text(
-                    '잔액',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: -.5,
-                    ),
-                  ),
-                ),
-              ),
-              AnimatedAlign(
-                key: const Key('account-balance-visibility-knob'),
-                duration: const Duration(milliseconds: 160),
-                curve: Curves.easeOut,
-                alignment: isVisible
-                    ? Alignment.centerRight
-                    : Alignment.centerLeft,
                 child: Container(
-                  width: 28,
-                  height: 28,
-                  margin: const EdgeInsets.all(4),
+                  width: 25,
+                  height: 25,
+                  margin: const EdgeInsets.all(2),
                   decoration: const BoxDecoration(
                     color: Colors.white,
                     shape: BoxShape.circle,
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -1073,33 +1062,12 @@ class _BalanceVisibilityToggle extends StatelessWidget {
 class _TransactionLayoutMetrics {
   const _TransactionLayoutMetrics._();
 
-  static const firstRowTop = 652.0;
-  static const dateHeaderExtent = 52.0;
-  static const dayDividerExtent = 46.0;
-  static const rowExtent = 110.0;
-  static const bottomPadding = 150.0;
+  static const firstRowTop = 872.0;
+  static const rowExtent = 176.0;
+  static const bottomPadding = 80.0;
 
-  static String dateKey(LedgerTransaction transaction) =>
-      '${transaction.occurredAt.year}-${transaction.occurredAt.month}-'
-      '${transaction.occurredAt.day}';
-
-  static double contentBottom(
-    List<LedgerTransaction> transactions, {
-    required double verticalOffset,
-  }) {
-    var cursor = firstRowTop + verticalOffset;
-    String? previousDate;
-    for (final transaction in transactions) {
-      final currentDate = dateKey(transaction);
-      if (currentDate != previousDate) {
-        if (previousDate != null) cursor += dayDividerExtent;
-        cursor += dateHeaderExtent;
-        previousDate = currentDate;
-      }
-      cursor += rowExtent;
-    }
-    return cursor;
-  }
+  static double contentBottom(List<LedgerTransaction> transactions) =>
+      firstRowTop + (transactions.length * rowExtent);
 }
 
 class _FilterBar extends StatelessWidget {
@@ -1118,41 +1086,39 @@ class _FilterBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Positioned(
-      left: 28,
-      right: 28,
+      left: 0,
+      right: 0,
       top: top,
-      height: 62,
-      child: Stack(
-        children: [
-          const Positioned(
-            left: 0,
-            top: 10,
-            child: Icon(Icons.search_rounded, size: 35, color: _detailsInk),
-          ),
-          Positioned(
-            right: 0,
-            top: 3,
+      height: 66,
+      child: ColoredBox(
+        color: const Color(0xFFF6F6F6),
+        child: Align(
+          alignment: Alignment.centerRight,
+          child: Semantics(
+            label: '조회 조건 $label',
+            button: true,
             child: GestureDetector(
               key: filterKey,
               behavior: HitTestBehavior.opaque,
               onTap: onTap,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 11, 0, 11),
+                padding: const EdgeInsets.fromLTRB(20, 18, 42, 18),
                 child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       label,
                       style: const TextStyle(
-                        color: Color(0xFF303641),
-                        fontSize: 18,
+                        color: Color(0xFF444849),
+                        fontSize: 19,
                         fontWeight: FontWeight.w600,
-                        letterSpacing: -.7,
+                        letterSpacing: -0.7,
                       ),
                     ),
-                    const SizedBox(width: 3),
+                    const SizedBox(width: 15),
                     const Icon(
                       Icons.keyboard_arrow_down_rounded,
-                      size: 22,
+                      size: 24,
                       color: _detailsInk,
                     ),
                   ],
@@ -1160,7 +1126,7 @@ class _FilterBar extends StatelessWidget {
               ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -2030,7 +1996,7 @@ class _TransactionRow extends StatelessWidget {
     required this.top,
     required this.title,
     required this.transactionId,
-    required this.time,
+    required this.dateTime,
     required this.amount,
     required this.balance,
     required this.showBalance,
@@ -2040,7 +2006,7 @@ class _TransactionRow extends StatelessWidget {
   final double top;
   final String title;
   final String transactionId;
-  final String time;
+  final String dateTime;
   final String amount;
   final String balance;
   final bool showBalance;
@@ -2049,73 +2015,94 @@ class _TransactionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Positioned(
-      left: 28,
-      right: 28,
+      left: 35,
+      right: 35,
       top: top,
-      height: 100,
+      height: _TransactionLayoutMetrics.rowExtent,
       child: Stack(
         children: [
           Positioned(
             left: 0,
-            top: 6,
-            width: 330,
-            height: 34,
+            top: 34,
+            width: 320,
+            height: 36,
             child: Text(
               title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
-                color: Color(0xFF27303D),
+                color: _detailsInk,
                 fontSize: 24,
                 fontWeight: FontWeight.w600,
-                letterSpacing: -.8,
+                letterSpacing: -0.8,
               ),
             ),
           ),
           Positioned(
             right: 0,
-            top: 4,
+            top: 6,
             child: Text(
-              amount,
+              positive ? '입금' : '출금',
               style: TextStyle(
-                color: positive ? _detailsBlue : _detailsInk,
-                fontSize: 24,
+                color: positive
+                    ? const Color(0xFF1976D2)
+                    : const Color(0xFFEF4D4F),
+                fontSize: 19,
                 fontWeight: FontWeight.w600,
-                letterSpacing: -.8,
+                letterSpacing: -0.6,
               ),
             ),
           ),
           Positioned(
             left: 0,
-            top: 49,
+            top: 3,
             child: Text(
               key: Key('account-transaction-time-$transactionId'),
-              time,
+              dateTime,
               style: const TextStyle(
                 color: _detailsSecondary,
-                fontSize: 18,
-                fontWeight: FontWeight.w500,
-                fontVariations: [FontVariation('wght', 500)],
-                letterSpacing: -.5,
+                fontSize: 19.5,
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.5,
+              ),
+            ),
+          ),
+          Positioned(
+            right: 0,
+            top: 35,
+            child: Text(
+              amount,
+              style: TextStyle(
+                color: positive
+                    ? const Color(0xFF1976D2)
+                    : const Color(0xFFEF4D4F),
+                fontSize: 26,
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.8,
               ),
             ),
           ),
           if (showBalance)
             Positioned(
               right: 0,
-              top: 49,
+              top: 75,
               child: Text(
                 key: Key('account-transaction-balance-$transactionId'),
-                balance,
+                '잔액 $balance',
                 style: const TextStyle(
-                  color: _detailsSecondary,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w500,
-                  fontVariations: [FontVariation('wght', 500)],
-                  letterSpacing: -.5,
+                  color: _detailsMuted,
+                  fontSize: 18.5,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -0.5,
                 ),
               ),
             ),
+          const Positioned(
+            left: 0,
+            right: 0,
+            bottom: 30,
+            child: Divider(height: 1, thickness: 1, color: Color(0xFFE2E3E3)),
+          ),
         ],
       ),
     );
@@ -2127,28 +2114,8 @@ String _formatDetailsMoney(int value) => value.toString().replaceAllMapped(
   (_) => ',',
 );
 
-double _accountTypeWrapOffset(String accountType) {
-  final wrappedPainter = TextPainter(
-    text: TextSpan(text: accountType, style: _detailsAccountTypeStyle),
-    textDirection: TextDirection.ltr,
-    textScaler: TextScaler.noScaling,
-  )..layout(maxWidth: _detailsAccountTypeWidth);
-  final singleLinePainter = TextPainter(
-    text: const TextSpan(text: '가', style: _detailsAccountTypeStyle),
-    textDirection: TextDirection.ltr,
-    textScaler: TextScaler.noScaling,
-  )..layout(maxWidth: _detailsAccountTypeWidth);
-  final extraHeight = wrappedPainter.height - singleLinePainter.height;
-  return extraHeight > 0 ? extraHeight : 0;
-}
-
-String _displayAccountType(String? value) {
-  if (value == null || value.isEmpty) return '등록된 계좌가 없습니다';
-  if (value.startsWith('금융거래한도계좌2]')) return '[$value';
-  return value;
-}
-
-String _formatDetailsTime(DateTime value) {
+String _formatDetailsDateTime(DateTime value) {
   String two(int number) => number.toString().padLeft(2, '0');
-  return '${two(value.hour)}:${two(value.minute)}:${two(value.second)}';
+  return '${value.year}.${two(value.month)}.${two(value.day)} '
+      '${two(value.hour)}:${two(value.minute)}:${two(value.second)}';
 }

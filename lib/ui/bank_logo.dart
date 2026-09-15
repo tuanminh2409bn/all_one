@@ -17,12 +17,19 @@ class BankLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return RepaintBoundary(
-      child: SizedBox.square(
-        dimension: size,
-        child: ClipRect(
-          child: Transform.scale(
-            scale: BankCatalog.logoScale(bankCode),
+    final scaledSize = size * BankCatalog.logoScale(bankCode);
+    return SizedBox.square(
+      dimension: size,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(size * .28),
+        clipBehavior: Clip.antiAlias,
+        child: OverflowBox(
+          minWidth: scaledSize,
+          maxWidth: scaledSize,
+          minHeight: scaledSize,
+          maxHeight: scaledSize,
+          child: SizedBox.square(
+            dimension: scaledSize,
             child: Image.asset(
               BankCatalog.logoAsset(bankCode),
               fit: BoxFit.contain,

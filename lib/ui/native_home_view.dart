@@ -35,6 +35,7 @@ class NativeHomeView extends StatelessWidget {
     required this.onMenuTap,
     required this.onSelectNh,
     required this.onSelectOther,
+    required this.onLimitRelease,
     required this.onOpenDetails,
     required this.onTransfer,
     required this.onCopyAccount,
@@ -61,6 +62,7 @@ class NativeHomeView extends StatelessWidget {
   final VoidCallback onMenuTap;
   final VoidCallback onSelectNh;
   final VoidCallback onSelectOther;
+  final VoidCallback onLimitRelease;
   final VoidCallback onOpenDetails;
   final VoidCallback onTransfer;
   final VoidCallback? onCopyAccount;
@@ -119,6 +121,7 @@ class NativeHomeView extends StatelessWidget {
                               account: account,
                               balanceLabel: balanceLabel,
                               hideAmounts: hideAmounts,
+                              onLimitRelease: onLimitRelease,
                               onOpenDetails: onOpenDetails,
                               onTransfer: onTransfer,
                               onCopy: onCopyAccount,
@@ -762,6 +765,7 @@ class _AccountCard extends StatelessWidget {
     required this.account,
     required this.balanceLabel,
     required this.hideAmounts,
+    required this.onLimitRelease,
     required this.onOpenDetails,
     required this.onTransfer,
     required this.onToggleHide,
@@ -771,6 +775,7 @@ class _AccountCard extends StatelessWidget {
   final BankAccount? account;
   final String balanceLabel;
   final bool hideAmounts;
+  final VoidCallback onLimitRelease;
   final VoidCallback onOpenDetails;
   final VoidCallback onTransfer;
   final VoidCallback onToggleHide;
@@ -827,12 +832,17 @@ class _AccountCard extends StatelessWidget {
                               top: 11 * scale,
                               width: 48 * scale,
                               height: 48 * scale,
-                              child: account == null
-                                  ? const _NhMark()
-                                  : BankLogo(
-                                      bankCode: account!.bankCode,
-                                      size: 48 * scale,
-                                    ),
+                              child: ClipRRect(
+                                key: const Key('home-account-logo'),
+                                borderRadius: BorderRadius.circular(14 * scale),
+                                child:
+                                    account == null || account!.bankCode == '농협'
+                                    ? const _NhMark()
+                                    : BankLogo(
+                                        bankCode: account!.bankCode,
+                                        size: 48 * scale,
+                                      ),
+                              ),
                             ),
                           ],
                         ),
@@ -974,7 +984,7 @@ class _AccountCard extends StatelessWidget {
                       Expanded(
                         child: _AccountAction(
                           label: '한도해제',
-                          onTap: onOpenDetails,
+                          onTap: onLimitRelease,
                         ),
                       ),
                       SizedBox(width: 12 * scale),
@@ -1035,9 +1045,9 @@ class _NhMark extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: Color(0xFF0875BE),
-        shape: BoxShape.circle,
+        borderRadius: BorderRadius.circular(14 * _HomeScale.of(context)),
       ),
       child: Center(
         child: Text(
