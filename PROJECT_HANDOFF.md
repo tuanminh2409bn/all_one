@@ -195,6 +195,9 @@ flutter build apk --debug
 - Release verification on 2026-09-16:
   - Flutter 3.38.10 `flutter build apk --release` succeeded and produced `build/app/outputs/flutter-apk/app-release.apk` (99.4 MB).
   - Flutter's Gradle migration temporarily rewrites the explicit Android API 23 `minSdk`; restore `minSdk = 23` in the tracked `android/app/build.gradle.kts` after any local build.
+- Xcode Cloud iOS deployment-target repair on 2026-09-16:
+  - The Xcode Cloud archive reported 20 pods and privacy bundles with iOS deployment targets from 9.0 through 13.0, while the Cloud Xcode image accepts iOS 15.0 or later.
+  - `ios/Podfile` now raises every generated Pods build configuration to iOS 15.0 after Flutter's standard CocoaPods settings are applied. `pod install` completed and the generated Pods project has no remaining 9.0–14.0 deployment targets.
 
 ## Known limits and next-session checklist
 
