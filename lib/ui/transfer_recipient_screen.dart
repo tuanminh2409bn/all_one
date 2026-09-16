@@ -1407,45 +1407,55 @@ class _ManualEntryState extends State<_ManualEntry> {
           right: 28,
           top: 283,
           height: 79,
-          child: TextField(
-            key: const Key('transfer-account-input'),
-            controller: widget.controller,
-            keyboardType: TextInputType.number,
-            textInputAction: TextInputAction.next,
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(30),
-            ],
-            onChanged: widget.onAccountChanged,
-            style: const TextStyle(
-              color: _ink,
-              fontSize: 24,
-              fontWeight: FontWeight.w500,
-              letterSpacing: -.5,
-            ),
-            decoration: InputDecoration(
-              hintText: '계좌번호를 입력해 주세요',
-              hintStyle: const TextStyle(
-                color: _recipientPlaceholder,
-                fontSize: 25,
-                fontWeight: FontWeight.w600,
-                letterSpacing: -.65,
+          child: SizedBox.expand(
+            child: TextField(
+              key: const Key('transfer-account-input'),
+              controller: widget.controller,
+              keyboardType: TextInputType.number,
+              textInputAction: TextInputAction.next,
+              textAlignVertical: TextAlignVertical.center,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(30),
+              ],
+              onChanged: widget.onAccountChanged,
+              style: const TextStyle(
+                color: _ink,
+                fontSize: 24,
+                fontWeight: FontWeight.w500,
+                letterSpacing: -.5,
               ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 30),
-              suffixIcon: widget.account.isEmpty
-                  ? null
-                  : IconButton(
-                      key: const Key('transfer-clear-account'),
-                      onPressed: widget.onClear,
-                      icon: const Icon(Icons.cancel, color: Color(0xFF949494)),
-                    ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(17),
-                borderSide: const BorderSide(color: Color(0xFFD8D8D8)),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(17),
-                borderSide: const BorderSide(color: _ink, width: 1.4),
+              decoration: InputDecoration(
+                hintText: '계좌번호를 입력해 주세요',
+                constraints: const BoxConstraints.tightFor(height: 79),
+                hintStyle: const TextStyle(
+                  color: _recipientPlaceholder,
+                  fontSize: 25,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -.65,
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 30,
+                  vertical: 24,
+                ),
+                suffixIcon: widget.account.isEmpty
+                    ? null
+                    : IconButton(
+                        key: const Key('transfer-clear-account'),
+                        onPressed: widget.onClear,
+                        icon: const Icon(
+                          Icons.cancel,
+                          color: Color(0xFF949494),
+                        ),
+                      ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(17),
+                  borderSide: const BorderSide(color: Color(0xFFD8D8D8)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(17),
+                  borderSide: const BorderSide(color: _ink, width: 1.4),
+                ),
               ),
             ),
           ),
@@ -1625,7 +1635,7 @@ class _BankBox extends StatelessWidget {
                   style: TextStyle(
                     color: _ink,
                     fontSize: 25,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w700,
                     letterSpacing: -.65,
                   ),
                 )

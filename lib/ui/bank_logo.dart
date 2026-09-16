@@ -21,21 +21,32 @@ class BankLogo extends StatelessWidget {
     return SizedBox.square(
       dimension: size,
       child: ClipRRect(
+        key: Key('bank-logo-frame-$bankCode'),
         borderRadius: BorderRadius.circular(size * .28),
         clipBehavior: Clip.antiAlias,
-        child: OverflowBox(
-          minWidth: scaledSize,
-          maxWidth: scaledSize,
-          minHeight: scaledSize,
-          maxHeight: scaledSize,
-          child: SizedBox.square(
-            dimension: scaledSize,
-            child: Image.asset(
-              BankCatalog.logoAsset(bankCode),
-              fit: BoxFit.contain,
-              filterQuality: FilterQuality.high,
-              isAntiAlias: true,
-              gaplessPlayback: true,
+        child: ColoredBox(
+          key: Key('bank-logo-tile-$bankCode'),
+          color: Color(BankCatalog.logoTileColor(bankCode)),
+          child: OverflowBox(
+            minWidth: scaledSize,
+            maxWidth: scaledSize,
+            minHeight: scaledSize,
+            maxHeight: scaledSize,
+            child: SizedBox.square(
+              dimension: scaledSize,
+              child: Image.asset(
+                BankCatalog.logoAsset(bankCode),
+                fit: BoxFit.contain,
+                color: BankCatalog.usesWhiteLogo(bankCode)
+                    ? Colors.white
+                    : null,
+                colorBlendMode: BankCatalog.usesWhiteLogo(bankCode)
+                    ? BlendMode.srcIn
+                    : null,
+                filterQuality: FilterQuality.high,
+                isAntiAlias: true,
+                gaplessPlayback: true,
+              ),
             ),
           ),
         ),

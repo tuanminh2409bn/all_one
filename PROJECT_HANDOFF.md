@@ -1,6 +1,6 @@
 # all_one — project handoff
 
-Last updated: 2026-09-15 (Asia/Ho_Chi_Minh)
+Last updated: 2026-09-16 (Asia/Ho_Chi_Minh)
 
 This is the persistent starting context for a new development session. Read it after `AGENTS.md`. It records the current state and decisions; source code remains authoritative if the two differ.
 
@@ -74,13 +74,13 @@ Native platform launch
 - Large text uses a `1.13` multiplier over the normal Home text scale. The account card grows from 326 to 342 design pixels in large-text mode so the three action buttons do not overflow.
 - Header and bottom navigation remain fixed while Home content scrolls. Header search jumps to the benefits section.
 - Amount visibility, NH/other-finance tabs, account-number copy, account details, transfer flow, and data-management screens are wired.
-- The Home account logo is a 48×48 blue rounded square, and `BankLogo` applies the same stronger proportional corner treatment to bank/security marks throughout account, recipient, picker, and transfer screens.
+- The Home account logo is a 48×48 blue rounded square. Shared `BankLogo` now places every bank/security mark on an opaque brand-color rounded-square tile throughout account, recipient, picker, and transfer screens; Toss Bank/Securities reuse the transparent Toss mark in white on the common Toss-blue tile.
 - The Home `한도해제` action has its own route to `lib/ui/limit_release_screen.dart`; `거래내역` continues to open the existing account-details flow.
 - `LimitReleaseScreen` reproduces the supplied top and scrolled reference states as one continuous 588×1280 scrollable page. Its back/title/home/search header remains fixed, while the current primary account (or the reference fallback account) and the Korean guidance copy scroll underneath it.
 - The Home `거래내역` action opens `AccountDetailsScreen`, now matching the supplied `거래내역조회` top and scrolled mockups. The page keeps its header and account identity fixed, scrolls away the balance/actions/TLJ banner, pins the one-month filter beneath the account identity, and renders current ledger entries as dated deposit/withdrawal rows with running balances.
 - The Home `이체` action opens `TransferRecipientScreen` directly on the account-number/bank entry view. That view reproduces the supplied recipient mockup with back/cancel controls, disabled Next state, four recipient tabs, and the empty recent-transfer state; account numbers use a digits-only system keyboard rather than the former permanently visible custom keypad.
 - The bank/security picker is one continuous bottom-sheet route. Its title and close button remain fixed while the segmented control and two-column institution list scroll together. The bank tab follows the supplied row order through `지방세입`; the securities tab follows the supplied 24-entry order.
-- Picker logos reuse the sharp 1024×1024 sources already imported from the sibling `app_hq/bank_icons` directory (52 of the current 56 logo assets are byte-identical to those source files). `BankLogo` sizes them through layout constraints instead of an extra transform/raster-cache layer so logos appear sharply and consistently on the first frame.
+- Picker logos reuse the sharp 1024×1024 sources already imported from the sibling `app_hq/bank_icons` directory (52 of the current 56 logo assets are byte-identical to those source files). `BankLogo` sizes them through layout constraints instead of an extra transform/raster-cache layer, clips the final tile rather than the transparent/circular source silhouette, and supplies an institution-specific background color so the visible outer shape matches the rounded-square reference treatment.
 - Secondary copy on the limit-release, transaction-history, transfer-recipient, and institution-picker screens uses the darker Home muted tone (`#62696B`) with medium/semibold rendering so it remains legible on physical Android devices.
 - Transaction-history type labels (`입금`/`출금`) above the right-aligned amounts use semibold text so they remain clear on physical Android displays.
 - The three data-management tabs keep their content inside the bottom system safe area, so account/recipient action buttons and the lowest list content stay above Android's three-button or gesture navigation bar.
@@ -179,6 +179,22 @@ flutter build apk --debug
   - Transaction-history top/scrolled golden baselines were updated after visual review to record the prior intentional `입금`/`출금` weight change.
   - Flutter 3.38.10 `flutter test --concurrency=1`: 43 passed; serial execution avoids a transient golden-artifact race observed when test files run in parallel.
   - The debug APK built, installed, and launched successfully on Samsung SM-A366B; Flutter's automatic `minSdk` rewrite was reverted to preserve API 23.
+- Latest verification after the transfer-recipient field fidelity correction on 2026-09-16:
+  - The account-number field now paints at the same 79-design-pixel height as the bank selector, with vertically centered content; the `은행을 선택해 주세요` label uses `w700` like the reference app.
+  - The recipient golden checkpoint was intentionally regenerated and visually compared with the supplied original reference.
+  - The debug APK built, installed, and launched successfully on the Samsung SM-A366B; Flutter was detached with the app still foregrounded. The build tool's automatic `minSdk` rewrite was reverted to preserve Android API 23.
+- Latest verification after the app-wide rounded-square institution-logo update on 2026-09-16:
+  - Flutter 3.38.10 `flutter analyze`: no issues.
+  - Flutter 3.38.10 `flutter test test/bank_catalog_test.dart test/widget_test.dart`: 20 passed, including exhaustive opaque tile-color coverage and shared rounded-corner assertions.
+  - Flutter 3.38.10 recipient/institution-picker golden test: 1 test passed across four checkpoints after intentionally regenerating and visually reviewing the recipient, bank-picker top/scrolled, and securities-picker baselines.
+  - Public third-party Korean financial-logo sets were evaluated but not added: they reproduce general institution marks, not the proprietary NH All One tile artwork, and would add a new SVG dependency without guaranteeing pixel-identical output.
+- Latest Android Studio/Flutter Gradle compatibility repair on 2026-09-16:
+  - `android/gradle/wrapper/gradle-wrapper.properties` uses Gradle 8.14 and `android/settings.gradle.kts` uses Android Gradle Plugin 8.11.1, the Flutter 3.38 template-compatible pair. Do not use `--android-skip-build-dependency-validation` as a workaround.
+  - Flutter 3.38.10 `flutter build apk --debug` succeeded and produced `build/app/outputs/flutter-apk/app-debug.apk`.
+  - Flutter 3.38.10 `flutter analyze`: no issues.
+- Release verification on 2026-09-16:
+  - Flutter 3.38.10 `flutter build apk --release` succeeded and produced `build/app/outputs/flutter-apk/app-release.apk` (99.4 MB).
+  - Flutter's Gradle migration temporarily rewrites the explicit Android API 23 `minSdk`; restore `minSdk = 23` in the tracked `android/app/build.gradle.kts` after any local build.
 
 ## Known limits and next-session checklist
 

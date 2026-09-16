@@ -9,6 +9,7 @@ import 'package:all_one/core/app_data.dart';
 import 'package:all_one/core/auth_service.dart';
 import 'package:all_one/ui/account_details_screen.dart';
 import 'package:all_one/ui/app_loading_transition.dart';
+import 'package:all_one/ui/bank_logo.dart';
 import 'package:all_one/ui/certificate_login_screen.dart';
 import 'package:all_one/ui/home_screen.dart';
 import 'package:all_one/ui/limit_release_screen.dart';
@@ -21,6 +22,26 @@ void main() {
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
+  });
+
+  testWidgets('bank logos use opaque rounded-square tiles', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(body: BankLogo(bankCode: '신한', size: 50)),
+      ),
+    );
+
+    final frame = tester.widget<ClipRRect>(
+      find.byKey(const Key('bank-logo-frame-신한')),
+    );
+    final tile = tester.widget<ColoredBox>(
+      find.byKey(const Key('bank-logo-tile-신한')),
+    );
+    final radius = frame.borderRadius as BorderRadius;
+    expect(radius.topLeft.x, closeTo(14, .001));
+    expect(radius.topLeft.y, closeTo(14, .001));
+    expect(tile.color.a, 1);
+    expect(tester.getSize(find.byType(BankLogo)), const Size.square(50));
   });
 
   test(
@@ -467,6 +488,22 @@ void main() {
     expect(find.text('은행을 선택해 주세요'), findsOneWidget);
     expect(find.text('최근 이체 내역이 없습니다.'), findsOneWidget);
     expect(find.byKey(const Key('transfer-cancel')), findsOneWidget);
+
+    final accountInput = tester.widget<TextField>(
+      find.byKey(const Key('transfer-account-input')),
+    );
+    expect(
+      tester.getSize(find.byKey(const Key('transfer-account-input'))).height,
+      79,
+    );
+    expect(
+      accountInput.decoration?.contentPadding,
+      const EdgeInsets.symmetric(horizontal: 30, vertical: 24),
+    );
+    expect(accountInput.decoration?.constraints?.minHeight, 79);
+    expect(accountInput.decoration?.constraints?.maxHeight, 79);
+    final bankPlaceholder = tester.widget<Text>(find.text('은행을 선택해 주세요'));
+    expect(bankPlaceholder.style?.fontWeight, FontWeight.w700);
 
     await tester.tap(find.byKey(const Key('transfer-bank-selector')));
     await tester.pumpAndSettle();

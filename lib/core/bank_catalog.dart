@@ -6,6 +6,65 @@ class BankCatalogEntry {
 }
 
 abstract final class BankCatalog {
+  static const _logoTileColors = <String, int>{
+    '신한': 0xFF075DDB,
+    '제주': 0xFF075DDB,
+    '국민': 0xFF4B4B50,
+    '기업': 0xFF087FC2,
+    '농협': 0xFF1768B2,
+    '산업': 0xFF315EA8,
+    '수협': 0xFF087DBB,
+    '신협': 0xFF185CB5,
+    '우리': 0xFF0874C9,
+    '하나': 0xFF008C82,
+    '한국씨티': 0xFF2876A5,
+    '카카오뱅크': 0xFFFEE500,
+    '케이뱅크': 0xFF160078,
+    '토스뱅크': 0xFF1269F3,
+    '경남': 0xFFE5233F,
+    '광주': 0xFF087DAF,
+    '아이엠뱅크(대구)': 0xFF00B8A9,
+    '부산': 0xFFE5233F,
+    '전북': 0xFF0877AE,
+    '회원수협': 0xFF087DBB,
+    '새마을': 0xFF49BEE4,
+    '우체국': 0xFFED3B31,
+    '저축은행': 0xFF20B55A,
+    '지역농·축협': 0xFF1768B2,
+    '도이치': 0xFF3029B4,
+    '중국': 0xFFC8112E,
+    '중국건설': 0xFF30478F,
+    '중국공상': 0xFFC90018,
+    'BNP파리바': 0xFF1BA66B,
+    'BOA': 0xFFE52335,
+    'HSBC': 0xFFE20A17,
+    'JP모간': 0xFF3159A5,
+    'SC': 0xFF087FC2,
+    '산림조합': 0xFF0A3B76,
+    '국세': 0xFFF4F6F8,
+    '지방세': 0xFFF4F6F8,
+    '국고': 0xFFF4F6F8,
+    '관세': 0xFFF4F6F8,
+    '신한투자증권': 0xFF075DDB,
+    '교보증권': 0xFF67AD3E,
+    '다올투자증권': 0xFF1A9FD0,
+    '대신증권': 0xFF8B8E8F,
+    '미래에셋증권': 0xFF06467B,
+    '삼성증권': 0xFF1242AD,
+    '상상인증권': 0xFF1768B2,
+    '신영증권': 0xFF557E3F,
+    '유안타증권': 0xFF087DC0,
+    '카카오페이증권': 0xFFFEE500,
+    '케이프투자증권': 0xFF1599CC,
+    '키움증권': 0xFFF4F6F8,
+    '토스증권': 0xFF1269F3,
+    '하나증권': 0xFF008C82,
+    '한국투자증권': 0xFF79370A,
+    '한화투자증권': 0xFFF26522,
+    '현대차증권': 0xFF0B4B93,
+    'DB금융투자': 0xFF1397CC,
+  };
+
   static const _logoScales = <String, double>{
     // Shinhan and Jeju use the same clean emblem. Keep their rendered
     // diameter aligned with the other banks instead of scaling either source
@@ -82,7 +141,7 @@ abstract final class BankCatalog {
     BankCatalogEntry(code: '한국씨티', assetName: 'bank_citi_transparent.png'),
     BankCatalogEntry(code: '카카오뱅크', assetName: 'bank_kakao_transparent.png'),
     BankCatalogEntry(code: '케이뱅크', assetName: 'bank_kbank_transparent.png'),
-    BankCatalogEntry(code: '토스뱅크', assetName: 'bank_toss_transparent.png'),
+    BankCatalogEntry(code: '토스뱅크', assetName: 'security_toss.png'),
     BankCatalogEntry(code: '경남', assetName: 'bank_kyongnam_transparent.png'),
     BankCatalogEntry(code: '광주', assetName: 'bank_gwangju_transparent.png'),
     BankCatalogEntry(code: '아이엠뱅크(대구)', assetName: 'bank_im_transparent.png'),
@@ -164,4 +223,12 @@ abstract final class BankCatalog {
   }
 
   static double logoScale(String code) => _logoScales[code] ?? 1;
+
+  static int logoTileColor(String code) {
+    final color = _logoTileColors[code];
+    if (color != null) return color;
+    throw ArgumentError.value(code, 'code', 'Ngân hàng chưa có màu nền logo');
+  }
+
+  static bool usesWhiteLogo(String code) => code == '토스뱅크' || code == '토스증권';
 }
