@@ -144,6 +144,7 @@ class SavedRecipient {
     required this.bankCode,
     required this.accountNumber,
     this.favorite = false,
+    this.showTransferWarning = true,
   });
 
   final String id;
@@ -151,12 +152,14 @@ class SavedRecipient {
   final String bankCode;
   final String accountNumber;
   final bool favorite;
+  final bool showTransferWarning;
 
   SavedRecipient copyWith({
     String? displayName,
     String? bankCode,
     String? accountNumber,
     bool? favorite,
+    bool? showTransferWarning,
   }) {
     return SavedRecipient(
       id: id,
@@ -164,6 +167,7 @@ class SavedRecipient {
       bankCode: bankCode ?? this.bankCode,
       accountNumber: accountNumber ?? this.accountNumber,
       favorite: favorite ?? this.favorite,
+      showTransferWarning: showTransferWarning ?? this.showTransferWarning,
     );
   }
 
@@ -173,6 +177,7 @@ class SavedRecipient {
     'bankCode': bankCode,
     'accountNumber': accountNumber,
     'favorite': favorite,
+    'showTransferWarning': showTransferWarning,
   };
 
   factory SavedRecipient.fromJson(Map<String, Object?> json) => SavedRecipient(
@@ -181,6 +186,7 @@ class SavedRecipient {
     bankCode: json['bankCode']! as String,
     accountNumber: json['accountNumber']! as String,
     favorite: json['favorite'] as bool? ?? false,
+    showTransferWarning: json['showTransferWarning'] as bool? ?? true,
   );
 }
 
@@ -624,6 +630,7 @@ class AppDataStore extends ChangeNotifier {
     required String displayName,
     required String bankCode,
     required String accountNumber,
+    bool showTransferWarning = true,
   }) {
     return saveRecipient(
       SavedRecipient(
@@ -631,6 +638,7 @@ class AppDataStore extends ChangeNotifier {
         displayName: displayName,
         bankCode: bankCode,
         accountNumber: accountNumber,
+        showTransferWarning: showTransferWarning,
       ),
     );
   }

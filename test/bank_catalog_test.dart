@@ -3,29 +3,33 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:all_one/core/bank_catalog.dart';
 
 void main() {
-  test('Shinhan and Jeju share the same sharp logo and render scale', () {
+  test('institutions sharing a brand resolve to the same new logo', () {
     expect(BankCatalog.logoAsset('제주'), BankCatalog.logoAsset('신한'));
-    expect(BankCatalog.logoScale('제주'), BankCatalog.logoScale('신한'));
+    expect(BankCatalog.logoAsset('부산'), BankCatalog.logoAsset('경남'));
+    expect(BankCatalog.logoAsset('전북'), BankCatalog.logoAsset('광주'));
+    expect(BankCatalog.logoAsset('토스증권'), BankCatalog.logoAsset('토스뱅크'));
   });
 
-  test('every catalog entry resolves to a logo asset', () {
+  test('all 48 supplied logos are mapped and old asset names are gone', () {
+    expect(BankCatalog.logoAssets, hasLength(48));
+    expect(BankCatalog.logoAssets.toSet(), hasLength(48));
+    for (final asset in BankCatalog.logoAssets) {
+      expect(asset, startsWith('assets/images/logo_'));
+      expect(asset, isNot(contains('_transparent')));
+      expect(asset, isNot(contains('/bank_')));
+      expect(asset, isNot(contains('/security_')));
+    }
     for (final code in BankCatalog.codes) {
-      expect(
-        BankCatalog.logoAsset(code),
-        startsWith('assets/images/'),
-        reason: 'Missing logo mapping for $code',
-      );
-      expect(
-        BankCatalog.logoTileColor(code) >> 24,
-        0xFF,
-        reason: 'Missing opaque rounded-square tile color for $code',
-      );
+      if (BankCatalog.tryLogoAsset(code) != null) {
+        expect(BankCatalog.logoScale(code), greaterThan(1));
+      }
     }
   });
 
-  test('Toss uses its transparent mark on the shared blue tile', () {
-    expect(BankCatalog.logoAsset('토스뱅크'), endsWith('security_toss.png'));
-    expect(BankCatalog.usesWhiteLogo('토스뱅크'), isTrue);
-    expect(BankCatalog.usesWhiteLogo('토스증권'), isTrue);
+  test('institutions missing from the supplied set use a safe fallback', () {
+    for (final code in ['우체국', '국세', '지방세', '국고', '관세']) {
+      expect(BankCatalog.tryLogoAsset(code), isNull);
+      expect(BankCatalog.codes, contains(code));
+    }
   });
 }

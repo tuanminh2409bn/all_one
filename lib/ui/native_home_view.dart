@@ -8,7 +8,7 @@ import 'bank_logo.dart';
 import 'tlj_artwork_paths.dart';
 
 const _designWidth = 588.0;
-const _normalHomeTextScale = 1.13;
+const _normalHomeTextScale = 1.0;
 const _largeHomeTextMultiplier = 1.13;
 const _homeBackground = Color(0xFFEEF2F3);
 const _ink = Color(0xFF111111);
@@ -92,113 +92,149 @@ class NativeHomeView extends StatelessWidget {
         child: Scaffold(
           backgroundColor: Colors.white,
           body: SafeArea(
+            top: false,
             bottom: false,
-            child: ColoredBox(
-              color: _homeBackground,
-              child: _HomeScale(
-                scale: scale,
-                child: Stack(
-                  children: [
-                    Positioned.fill(
-                      child: SingleChildScrollView(
-                        key: const Key('home-scroll'),
-                        controller: scrollController,
-                        physics: const ClampingScrollPhysics(),
-                        padding: EdgeInsets.only(bottom: 36 * scale),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            SizedBox(height: 147 * scale),
-                            const _EventBanner(),
-                            SizedBox(height: 43 * scale),
-                            _FinanceTabs(
-                              nhSelected: nhSelected,
-                              onSelectNh: onSelectNh,
-                              onSelectOther: onSelectOther,
-                            ),
-                            SizedBox(height: 18 * scale),
-                            _AccountCard(
-                              account: account,
-                              balanceLabel: balanceLabel,
-                              hideAmounts: hideAmounts,
-                              onLimitRelease: onLimitRelease,
-                              onOpenDetails: onOpenDetails,
-                              onTransfer: onTransfer,
-                              onCopy: onCopyAccount,
-                              onToggleHide: onToggleHide,
-                            ),
-                            SizedBox(height: 44 * scale),
-                            const _TljBanner(),
-                            SizedBox(height: 61 * scale),
-                            KeyedSubtree(
-                              key: benefitsKey,
-                              child: const _SectionTitle('오늘의 혜택'),
-                            ),
-                            SizedBox(height: 26 * scale),
-                            const _DailyPointCard(),
-                            SizedBox(height: 51 * scale),
-                            _ShortcutGrid(
-                              onAccounts: onAccounts,
-                              onAllAccounts: onAllAccounts,
-                            ),
-                            SizedBox(height: 58 * scale),
-                            const _SectionTitle('내 모임'),
-                            SizedBox(height: 16 * scale),
-                            const _MoimBanner(),
-                            SizedBox(height: 20 * scale),
-                            _SpendingSection(
-                              spendingLabel: spendingLabel,
-                              scheduledLabel: scheduledLabel,
-                              onToggleHide: onToggleHide,
-                            ),
-                            SizedBox(height: 61 * scale),
-                            KeyedSubtree(
-                              key: assetsKey,
-                              child: _AssetsSection(
-                                netLabel: netAssetsLabel,
-                                onToggleHide: onToggleHide,
-                                onAccounts: onAccounts,
+            child: Padding(
+              padding: EdgeInsets.only(top: 54 * scale),
+              child: ColoredBox(
+                color: _homeBackground,
+                child: _HomeScale(
+                  scale: scale,
+                  child: Stack(
+                    children: [
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        top: 130 * scale,
+                        height: 760 * scale,
+                        child: AnimatedBuilder(
+                          animation: scrollController,
+                          child: const DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: RadialGradient(
+                                center: Alignment(0.12, 0.04),
+                                radius: 0.92,
+                                colors: [
+                                  Color(0xB8D8EEE8),
+                                  Color(0x70E0EDF0),
+                                  Color(0x00EEF2F3),
+                                ],
+                                stops: [0, 0.6, 1],
                               ),
                             ),
-                            SizedBox(height: 60 * scale),
-                            const _LifestyleRow(),
-                            SizedBox(height: 63 * scale),
-                            const _SectionTitle('NH금융그룹'),
-                            SizedBox(height: 16 * scale),
-                            const _GroupGrid(),
-                            SizedBox(height: 77 * scale),
-                            const _HomeSettingsLink(),
-                            SizedBox(height: 72 * scale),
-                          ],
+                          ),
+                          builder: (context, child) {
+                            final offset = scrollController.hasClients
+                                ? scrollController.offset
+                                : 0.0;
+                            return Transform.translate(
+                              offset: Offset(0, -offset),
+                              child: child,
+                            );
+                          },
                         ),
                       ),
-                    ),
-                    _HeaderBar(
-                      accountName: accountName,
-                      largeText: largeText,
-                      onAccountTap: onAccountTap,
-                      onToggleLargeText: onToggleLargeText,
-                      onMenuTap: onMenuTap,
-                    ),
-                    Positioned(
-                      left: 0,
-                      right: 0,
-                      bottom: 22 * scale,
-                      child: AnimatedBuilder(
-                        animation: scrollController,
-                        builder: (context, child) {
-                          final offset = scrollController.hasClients
-                              ? scrollController.offset
-                              : 0.0;
-                          if (offset >= 280 * scale) {
-                            return const SizedBox.shrink();
-                          }
-                          return Center(child: child);
-                        },
-                        child: _AssetsFab(onTap: onScrollToAssets),
+                      Positioned.fill(
+                        child: SingleChildScrollView(
+                          key: const Key('home-scroll'),
+                          controller: scrollController,
+                          physics: const ClampingScrollPhysics(),
+                          padding: EdgeInsets.only(bottom: 36 * scale),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              SizedBox(height: 147 * scale),
+                              const _EventBanner(),
+                              SizedBox(height: 43 * scale),
+                              _FinanceTabs(
+                                nhSelected: nhSelected,
+                                onSelectNh: onSelectNh,
+                                onSelectOther: onSelectOther,
+                              ),
+                              SizedBox(height: 18 * scale),
+                              _AccountCard(
+                                account: account,
+                                balanceLabel: balanceLabel,
+                                hideAmounts: hideAmounts,
+                                onLimitRelease: onLimitRelease,
+                                onOpenDetails: onOpenDetails,
+                                onTransfer: onTransfer,
+                                onCopy: onCopyAccount,
+                                onToggleHide: onToggleHide,
+                              ),
+                              SizedBox(height: 44 * scale),
+                              const _TljBanner(),
+                              SizedBox(height: 61 * scale),
+                              KeyedSubtree(
+                                key: benefitsKey,
+                                child: const _SectionTitle('오늘의 혜택'),
+                              ),
+                              SizedBox(height: 26 * scale),
+                              const _DailyPointCard(),
+                              SizedBox(height: 51 * scale),
+                              _ShortcutGrid(
+                                onAccounts: onAccounts,
+                                onAllAccounts: onAllAccounts,
+                              ),
+                              SizedBox(height: 58 * scale),
+                              const _SectionTitle('내 모임'),
+                              SizedBox(height: 16 * scale),
+                              const _MoimBanner(),
+                              SizedBox(height: 20 * scale),
+                              _SpendingSection(
+                                spendingLabel: spendingLabel,
+                                scheduledLabel: scheduledLabel,
+                                onToggleHide: onToggleHide,
+                              ),
+                              SizedBox(height: 61 * scale),
+                              KeyedSubtree(
+                                key: assetsKey,
+                                child: _AssetsSection(
+                                  netLabel: netAssetsLabel,
+                                  onToggleHide: onToggleHide,
+                                  onAccounts: onAccounts,
+                                ),
+                              ),
+                              SizedBox(height: 60 * scale),
+                              const _LifestyleRow(),
+                              SizedBox(height: 63 * scale),
+                              const _SectionTitle('NH금융그룹'),
+                              SizedBox(height: 16 * scale),
+                              const _GroupGrid(),
+                              SizedBox(height: 77 * scale),
+                              const _HomeSettingsLink(),
+                              SizedBox(height: 72 * scale),
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
+                      _HeaderBar(
+                        accountName: accountName,
+                        largeText: largeText,
+                        onAccountTap: onAccountTap,
+                        onToggleLargeText: onToggleLargeText,
+                        onMenuTap: onMenuTap,
+                      ),
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 22 * scale,
+                        child: AnimatedBuilder(
+                          animation: scrollController,
+                          builder: (context, child) {
+                            final offset = scrollController.hasClients
+                                ? scrollController.offset
+                                : 0.0;
+                            if (offset >= 280 * scale) {
+                              return const SizedBox.shrink();
+                            }
+                            return Center(child: child);
+                          },
+                          child: _AssetsFab(onTap: onScrollToAssets),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -235,9 +271,17 @@ TextStyle _style(
   double letterSpacing = -0.35,
 }) {
   final scale = _HomeScale.of(context);
+  final variableWeight = weight == FontWeight.w500
+      ? 500.0
+      : weight == FontWeight.w600
+      ? 600.0
+      : null;
   return TextStyle(
     fontSize: size * scale,
-    fontWeight: weight,
+    fontWeight: variableWeight == null ? weight : FontWeight.w400,
+    fontVariations: variableWeight == null
+        ? null
+        : [FontVariation('wght', variableWeight)],
     color: color,
     height: height,
     letterSpacing: letterSpacing * scale,
@@ -292,35 +336,43 @@ class _HeaderBar extends StatelessWidget {
               key: const Key('home-account-name'),
               behavior: HitTestBehavior.opaque,
               onTap: onAccountTap,
-              child: Text.rich(
-                TextSpan(
-                  children: [
-                    TextSpan(
-                      text: accountName,
-                      style: const TextStyle(fontWeight: FontWeight.w800),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: Text(
+                      signedIn ? '$accountName ...' : accountName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style:
+                          _style(
+                            context,
+                            25,
+                            weight: FontWeight.w700,
+                            height: 1.1,
+                            letterSpacing: -0.8,
+                          ).copyWith(
+                            decoration: signedIn
+                                ? TextDecoration.underline
+                                : TextDecoration.none,
+                            decorationThickness: 1.2,
+                          ),
                     ),
-                    if (signedIn)
-                      const TextSpan(
-                        text: ' 님',
-                        style: TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                  if (signedIn) ...[
+                    SizedBox(width: 13 * scale),
+                    Text(
+                      '님',
+                      style: _style(
+                        context,
+                        25,
+                        weight: FontWeight.w500,
+                        height: 1.1,
+                        letterSpacing: -0.8,
                       ),
-                  ],
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style:
-                    _style(
-                      context,
-                      27,
-                      weight: FontWeight.w700,
-                      height: 1.1,
-                      letterSpacing: -0.8,
-                    ).copyWith(
-                      decoration: signedIn
-                          ? TextDecoration.underline
-                          : TextDecoration.none,
-                      decorationThickness: 1.2,
                     ),
+                  ],
+                ],
               ),
             ),
           ),
@@ -330,220 +382,82 @@ class _HeaderBar extends StatelessWidget {
             child: const _FortuneChip(),
           ),
           Positioned(
+            left: 318 * scale,
+            top: 55 * scale,
+            child: GestureDetector(
+              key: const Key('home-native-large-text'),
+              onTap: onToggleLargeText,
+              child: Container(
+                width: 82 * scale,
+                height: 38 * scale,
+                padding: EdgeInsets.all(3 * scale),
+                decoration: BoxDecoration(
+                  color: largeText
+                      ? const Color(0xFFDCF2E6)
+                      : const Color(0xFFE9EAEA),
+                  borderRadius: BorderRadius.circular(19 * scale),
+                ),
+                child: Row(
+                  children: [
+                    Align(
+                      alignment: largeText
+                          ? Alignment.centerRight
+                          : Alignment.centerLeft,
+                      child: Container(
+                        width: 32 * scale,
+                        height: 32 * scale,
+                        decoration: BoxDecoration(
+                          color: largeText ? _green : Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: const [
+                            BoxShadow(color: Color(0x22000000), blurRadius: 3),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        '큰글',
+                        textAlign: TextAlign.center,
+                        style: _style(
+                          context,
+                          14,
+                          weight: FontWeight.w500,
+                          color: const Color(0xFF666A6B),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            right: 8 * scale,
+            top: 31 * scale,
+            width: 180 * scale,
+            height: 70 * scale,
+            child: Image.asset(
+              'assets/images/ref_header_actions.png',
+              fit: BoxFit.fill,
+              filterQuality: FilterQuality.high,
+              gaplessPlayback: true,
+            ),
+          ),
+          Positioned(
             right: 24 * scale,
             top: 55 * scale,
-            child: Row(
-              children: [
-                GestureDetector(
-                  key: const Key('home-native-large-text'),
-                  onTap: onToggleLargeText,
-                  child: Container(
-                    width: 82 * scale,
-                    height: 38 * scale,
-                    padding: EdgeInsets.all(3 * scale),
-                    decoration: BoxDecoration(
-                      color: largeText
-                          ? const Color(0xFFDCF2E6)
-                          : const Color(0xFFE9EAEA),
-                      borderRadius: BorderRadius.circular(19 * scale),
-                    ),
-                    child: Row(
-                      children: [
-                        Align(
-                          alignment: largeText
-                              ? Alignment.centerRight
-                              : Alignment.centerLeft,
-                          child: Container(
-                            width: 32 * scale,
-                            height: 32 * scale,
-                            decoration: BoxDecoration(
-                              color: largeText ? _green : Colors.white,
-                              shape: BoxShape.circle,
-                              boxShadow: const [
-                                BoxShadow(
-                                  color: Color(0x22000000),
-                                  blurRadius: 3,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: Text(
-                            '큰글',
-                            textAlign: TextAlign.center,
-                            style: _style(
-                              context,
-                              14,
-                              weight: FontWeight.w700,
-                              color: const Color(0xFF666A6B),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                SizedBox(width: 19 * scale),
-                SizedBox.square(
-                  dimension: 33 * scale,
-                  child: CustomPaint(painter: _GlobeIconPainter(scale)),
-                ),
-                SizedBox(width: 21 * scale),
-                SizedBox.square(
-                  dimension: 34 * scale,
-                  child: CustomPaint(painter: _BellIconPainter(scale)),
-                ),
-                SizedBox(width: 20 * scale),
-                GestureDetector(
-                  key: const Key('home-menu-search'),
-                  behavior: HitTestBehavior.opaque,
-                  onTap: onMenuTap,
-                  child: SizedBox(
-                    width: 37 * scale,
-                    height: 37 * scale,
-                    child: CustomPaint(painter: _MenuSearchIconPainter(scale)),
-                  ),
-                ),
-              ],
+            child: GestureDetector(
+              key: const Key('home-menu-search'),
+              behavior: HitTestBehavior.opaque,
+              onTap: onMenuTap,
+              child: SizedBox(width: 37 * scale, height: 37 * scale),
             ),
           ),
         ],
       ),
     );
   }
-}
-
-class _GlobeIconPainter extends CustomPainter {
-  const _GlobeIconPainter(this.scale);
-
-  final double scale;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final stroke = Paint()
-      ..color = _ink
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.35 * scale
-      ..strokeCap = StrokeCap.round
-      ..isAntiAlias = true;
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = 14.2 * scale;
-    canvas.drawCircle(center, radius, stroke);
-    canvas.drawOval(
-      Rect.fromCenter(center: center, width: 13.2 * scale, height: radius * 2),
-      stroke,
-    );
-    canvas.drawLine(
-      Offset(center.dx - radius, center.dy),
-      Offset(center.dx + radius, center.dy),
-      stroke,
-    );
-  }
-
-  @override
-  bool shouldRepaint(_GlobeIconPainter oldDelegate) =>
-      oldDelegate.scale != scale;
-}
-
-class _BellIconPainter extends CustomPainter {
-  const _BellIconPainter(this.scale);
-
-  final double scale;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final stroke = Paint()
-      ..color = _ink
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.35 * scale
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round
-      ..isAntiAlias = true;
-    final path = Path()
-      ..moveTo(6 * scale, 25 * scale)
-      ..cubicTo(
-        9 * scale,
-        22 * scale,
-        9 * scale,
-        19 * scale,
-        9 * scale,
-        14 * scale,
-      )
-      ..cubicTo(
-        9 * scale,
-        7 * scale,
-        12.5 * scale,
-        4 * scale,
-        17 * scale,
-        4 * scale,
-      )
-      ..cubicTo(
-        21.5 * scale,
-        4 * scale,
-        25 * scale,
-        7 * scale,
-        25 * scale,
-        14 * scale,
-      )
-      ..cubicTo(
-        25 * scale,
-        19 * scale,
-        25 * scale,
-        22 * scale,
-        28 * scale,
-        25 * scale,
-      )
-      ..close();
-    canvas.drawPath(path, stroke);
-    canvas.drawLine(
-      Offset(14 * scale, 29 * scale),
-      Offset(20 * scale, 29 * scale),
-      stroke,
-    );
-    canvas.drawLine(
-      Offset(17 * scale, 1.5 * scale),
-      Offset(17 * scale, 4 * scale),
-      stroke,
-    );
-  }
-
-  @override
-  bool shouldRepaint(_BellIconPainter oldDelegate) =>
-      oldDelegate.scale != scale;
-}
-
-class _MenuSearchIconPainter extends CustomPainter {
-  const _MenuSearchIconPainter(this.scale);
-
-  final double scale;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final stroke = Paint()
-      ..color = _ink
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.5 * scale
-      ..strokeCap = StrokeCap.round
-      ..isAntiAlias = true;
-    for (final y in <double>[7, 15, 23]) {
-      canvas.drawLine(
-        Offset(2 * scale, y * scale),
-        Offset(28 * scale, y * scale),
-        stroke,
-      );
-    }
-    canvas.drawCircle(Offset(27.5 * scale, 26 * scale), 6 * scale, stroke);
-    canvas.drawLine(
-      Offset(32 * scale, 30.5 * scale),
-      Offset(35.5 * scale, 34 * scale),
-      stroke,
-    );
-  }
-
-  @override
-  bool shouldRepaint(_MenuSearchIconPainter oldDelegate) =>
-      oldDelegate.scale != scale;
 }
 
 class _FortuneChip extends StatelessWidget {
@@ -581,8 +495,8 @@ class _FortuneChip extends StatelessWidget {
                   '오늘 운세 🍀',
                   style: _style(
                     context,
-                    15,
-                    weight: FontWeight.w500,
+                    16,
+                    weight: FontWeight.w400,
                     color: Colors.white,
                     height: 1,
                     letterSpacing: -0.15,
@@ -648,8 +562,8 @@ class _EventBanner extends StatelessWidget {
                     '요즘 핫한 이벤트 뭐있지?',
                     style: _style(
                       context,
-                      18,
-                      weight: FontWeight.w700,
+                      20,
+                      weight: FontWeight.w400,
                       color: const Color(0xFF485762),
                       height: 1,
                     ),
@@ -669,8 +583,8 @@ class _EventBanner extends StatelessWidget {
                 '보기만 해도 쌓이는 포인트',
                 style: _style(
                   context,
-                  23,
-                  weight: FontWeight.w800,
+                  25,
+                  weight: FontWeight.w700,
                   letterSpacing: -0.8,
                 ),
               ),
@@ -722,24 +636,27 @@ class _FinanceTabs extends StatelessWidget {
                     style: _style(
                       context,
                       24,
-                      weight: FontWeight.w800,
+                      weight: FontWeight.w700,
                       color: nhSelected ? _ink : const Color(0xFF9A9A9A),
                       letterSpacing: -0.8,
                     ),
                   ),
-                  SizedBox(width: 5 * scale),
-                  Container(
-                    width: 8 * scale,
-                    height: 8 * scale,
-                    decoration: BoxDecoration(
-                      color: nhSelected ? _green : Colors.transparent,
-                      shape: BoxShape.circle,
+                  SizedBox(width: 4 * scale),
+                  Transform.translate(
+                    offset: Offset(0, -10 * scale),
+                    child: Container(
+                      width: 7 * scale,
+                      height: 7 * scale,
+                      decoration: BoxDecoration(
+                        color: nhSelected ? _green : Colors.transparent,
+                        shape: BoxShape.circle,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-            SizedBox(width: 24 * scale),
+            SizedBox(width: 20 * scale),
             GestureDetector(
               onTap: onSelectOther,
               child: Text(
@@ -747,7 +664,7 @@ class _FinanceTabs extends StatelessWidget {
                 style: _style(
                   context,
                   24,
-                  weight: FontWeight.w700,
+                  weight: nhSelected ? FontWeight.w400 : FontWeight.w700,
                   color: nhSelected ? const Color(0xFF696F71) : _ink,
                   letterSpacing: -0.7,
                 ),
@@ -795,9 +712,9 @@ class _AccountCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(_cardRadius * scale),
           boxShadow: [
             BoxShadow(
-              color: const Color(0x1A607173),
-              blurRadius: 18 * scale,
-              offset: Offset(0, 7 * scale),
+              color: const Color(0x14607173),
+              blurRadius: 22 * scale,
+              offset: Offset(0, 6 * scale),
             ),
           ],
         ),
@@ -814,7 +731,7 @@ class _AccountCard extends StatelessWidget {
                 28 * scale,
                 35 * scale,
                 26 * scale,
-                28 * scale,
+                31 * scale,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -857,7 +774,7 @@ class _AccountCard extends StatelessWidget {
                               style: _style(
                                 context,
                                 21,
-                                weight: FontWeight.w800,
+                                weight: FontWeight.w600,
                                 letterSpacing: -0.7,
                               ),
                             ),
@@ -871,8 +788,8 @@ class _AccountCard extends StatelessWidget {
                                     overflow: TextOverflow.ellipsis,
                                     style: _style(
                                       context,
-                                      18,
-                                      weight: FontWeight.w700,
+                                      20,
+                                      weight: FontWeight.w400,
                                       color: const Color(0xFF62696B),
                                       letterSpacing: -0.45,
                                     ),
@@ -886,8 +803,8 @@ class _AccountCard extends StatelessWidget {
                                     style:
                                         _style(
                                           context,
-                                          16,
-                                          weight: FontWeight.w600,
+                                          18,
+                                          weight: FontWeight.w500,
                                           color: const Color(0xFF555B5D),
                                         ).copyWith(
                                           decoration: TextDecoration.underline,
@@ -923,53 +840,55 @@ class _AccountCard extends StatelessWidget {
                         style: _style(
                           context,
                           14,
-                          weight: FontWeight.w600,
+                          weight: FontWeight.w500,
                           color: const Color(0xFFE56577),
                         ),
                       ),
                     ),
                   ),
-                  SizedBox(height: 15 * scale),
+                  SizedBox(height: 10 * scale),
                   Padding(
                     padding: EdgeInsets.only(left: 58 * scale),
                     child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Transform.translate(
-                          offset: Offset(0, -3 * scale),
-                          child: Transform.scale(
-                            scaleX: 1.08,
-                            scaleY: 0.86,
-                            alignment: Alignment.topLeft,
-                            child: Text(
-                              balanceLabel,
-                              style: _style(
-                                context,
-                                32,
-                                weight: FontWeight.w800,
-                                letterSpacing: -0.9,
-                              ),
+                        SizedBox(width: 2 * scale),
+                        Transform.scale(
+                          scaleX: 1.095,
+                          scaleY: 0.95,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            balanceLabel,
+                            style: _style(
+                              context,
+                              29,
+                              weight: FontWeight.w700,
+                              letterSpacing: -0.9,
                             ),
                           ),
                         ),
-                        SizedBox(width: 11 * scale),
+                        SizedBox(width: 9 * scale),
                         GestureDetector(
                           onTap: onToggleHide,
                           child: Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 9 * scale,
-                              vertical: 4 * scale,
-                            ),
+                            width: 62 * scale,
+                            height: 38 * scale,
+                            alignment: Alignment.center,
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF0F1F1),
-                              borderRadius: BorderRadius.circular(14 * scale),
+                              color: Colors.white,
+                              border: Border.all(
+                                color: const Color(0xFFD7D9DA),
+                                width: 1 * scale,
+                              ),
+                              borderRadius: BorderRadius.circular(18 * scale),
                             ),
                             child: Text(
                               hideAmounts ? '보기' : '숨김',
                               style: _style(
                                 context,
-                                13,
+                                15,
                                 weight: FontWeight.w600,
-                                color: const Color(0xFF666B6D),
+                                color: _ink,
                               ),
                             ),
                           ),
@@ -1022,7 +941,7 @@ class _AccountAction extends StatelessWidget {
     return OutlinedButton(
       onPressed: onTap,
       style: OutlinedButton.styleFrom(
-        minimumSize: Size.fromHeight(59 * scale),
+        minimumSize: Size.fromHeight(61 * scale),
         padding: EdgeInsets.zero,
         side: BorderSide(color: const Color(0xFFD6D9D9), width: 1.3 * scale),
         shape: RoundedRectangleBorder(
@@ -1031,9 +950,9 @@ class _AccountAction extends StatelessWidget {
         foregroundColor: _ink,
       ),
       child: Transform.scale(
-        scaleX: 1.1,
-        scaleY: 1.08,
-        child: Text(label, style: _style(context, 18, weight: FontWeight.w700)),
+        scaleX: 1.14,
+        scaleY: 1.12,
+        child: Text(label, style: _style(context, 18, weight: FontWeight.w500)),
       ),
     );
   }
@@ -1055,7 +974,7 @@ class _NhMark extends StatelessWidget {
           style: _style(
             context,
             16,
-            weight: FontWeight.w800,
+            weight: FontWeight.w700,
             color: Colors.white,
             letterSpacing: 0,
           ),
@@ -1098,7 +1017,7 @@ class _TljBanner extends StatelessWidget {
                 children: [
                   Text(
                     '뚜레쥬르',
-                    style: _style(context, 19, weight: FontWeight.w700),
+                    style: _style(context, 19, weight: FontWeight.w500),
                   ),
                   SizedBox(height: 4 * scale),
                   Text(
@@ -1106,7 +1025,7 @@ class _TljBanner extends StatelessWidget {
                     style: _style(
                       context,
                       17,
-                      weight: FontWeight.w700,
+                      weight: FontWeight.w400,
                       color: const Color(0xFF747A7B),
                     ),
                   ),
@@ -1126,7 +1045,7 @@ class _TljBanner extends StatelessWidget {
                 children: [
                   Text(
                     '고객 누구나',
-                    style: _style(context, 18, weight: FontWeight.w600),
+                    style: _style(context, 18, weight: FontWeight.w500),
                   ),
                   SizedBox(height: 5 * scale),
                   Text(
@@ -1134,7 +1053,7 @@ class _TljBanner extends StatelessWidget {
                     style: _style(
                       context,
                       17,
-                      weight: FontWeight.w800,
+                      weight: FontWeight.w700,
                       color: const Color(0xFFF04435),
                     ),
                   ),
@@ -1158,7 +1077,7 @@ class _TljBanner extends StatelessWidget {
                 style: _style(
                   context,
                   13,
-                  weight: FontWeight.w800,
+                  weight: FontWeight.w500,
                   color: Colors.white,
                   height: 1,
                   letterSpacing: 0,
@@ -1428,7 +1347,7 @@ class _SectionTitle extends StatelessWidget {
         child: Align(
           alignment: Alignment.centerLeft,
           child: Transform.scale(
-            scaleX: 1.1,
+            scaleX: 1.0,
             alignment: Alignment.centerLeft,
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -1437,8 +1356,8 @@ class _SectionTitle extends StatelessWidget {
                   label,
                   style: _style(
                     context,
-                    25,
-                    weight: FontWeight.w800,
+                    28,
+                    weight: FontWeight.w700,
                     letterSpacing: -0.85,
                   ),
                 ),
@@ -1487,7 +1406,7 @@ class _DailyPointCard extends StatelessWidget {
               style: _style(
                 context,
                 21,
-                weight: FontWeight.w800,
+                weight: FontWeight.w700,
                 letterSpacing: -0.65,
               ),
             ),
@@ -1573,7 +1492,7 @@ class _ShortcutGrid extends StatelessWidget {
                     style: _style(
                       context,
                       15,
-                      weight: FontWeight.w700,
+                      weight: FontWeight.w500,
                       color: const Color(0xFF484E50),
                     ),
                   ),
@@ -1612,7 +1531,7 @@ class _MoimBanner extends StatelessWidget {
                 style: _style(
                   context,
                   17,
-                  weight: FontWeight.w700,
+                  weight: FontWeight.w400,
                   color: const Color(0xFF66626D),
                 ),
               ),
@@ -1622,7 +1541,7 @@ class _MoimBanner extends StatelessWidget {
               top: 61 * scale,
               child: Text(
                 '투명한 회비관리, 함께해요',
-                style: _style(context, 22, weight: FontWeight.w800),
+                style: _style(context, 22, weight: FontWeight.w600),
               ),
             ),
             Positioned(
@@ -1630,7 +1549,7 @@ class _MoimBanner extends StatelessWidget {
               top: 111 * scale,
               child: Text(
                 'NH올원모임으로 시작하기',
-                style: _style(context, 19, weight: FontWeight.w700),
+                style: _style(context, 19, weight: FontWeight.w500),
               ),
             ),
             Positioned(
@@ -1730,7 +1649,7 @@ class _DataSectionHeading extends StatelessWidget {
             Text(
               title,
               key: ValueKey('home-data-title-$title'),
-              style: _style(context, 25, weight: FontWeight.w800),
+              style: _style(context, 25, weight: FontWeight.w700),
             ),
             const Spacer(),
             Flexible(
@@ -1743,7 +1662,7 @@ class _DataSectionHeading extends StatelessWidget {
                   style: _style(
                     context,
                     16,
-                    weight: FontWeight.w700,
+                    weight: FontWeight.w400,
                     color: const Color(0xFF747A7C),
                     letterSpacing: -0.2,
                   ),
@@ -1767,7 +1686,7 @@ class _DataSectionHeading extends StatelessWidget {
                   style: _style(
                     context,
                     14,
-                    weight: FontWeight.w600,
+                    weight: FontWeight.w500,
                     color: const Color(0xFF555B5D),
                   ),
                 ),
@@ -1805,9 +1724,9 @@ class _MoneyRow extends StatelessWidget {
           ),
         ),
         SizedBox(width: 18 * scale),
-        Text(label, style: _style(context, 21, weight: FontWeight.w700)),
+        Text(label, style: _style(context, 21, weight: FontWeight.w500)),
         const Spacer(),
-        Text(value, style: _style(context, 25, weight: FontWeight.w800)),
+        Text(value, style: _style(context, 25, weight: FontWeight.w700)),
       ],
     );
   }
@@ -1877,7 +1796,7 @@ class _AssetsSection extends StatelessWidget {
                                 style: _style(
                                   context,
                                   31,
-                                  weight: FontWeight.w800,
+                                  weight: FontWeight.w700,
                                   letterSpacing: -0.9,
                                 ),
                               ),
@@ -1894,7 +1813,7 @@ class _AssetsSection extends StatelessWidget {
                             style: _style(
                               context,
                               15,
-                              weight: FontWeight.w600,
+                              weight: FontWeight.w500,
                               color: const Color(0xFF29A46B),
                             ),
                           ),
@@ -1974,14 +1893,14 @@ class _AssetRow extends StatelessWidget {
             ),
           ),
           SizedBox(width: 17 * scale),
-          Text(label, style: _style(context, 20, weight: FontWeight.w700)),
+          Text(label, style: _style(context, 20, weight: FontWeight.w500)),
           const Spacer(),
           Text(
             value,
             style: _style(
               context,
               mutedValue ? 20 : 19,
-              weight: FontWeight.w700,
+              weight: mutedValue ? FontWeight.w400 : FontWeight.w500,
               color: mutedValue ? const Color(0xFF656B6D) : _ink,
             ),
           ),
@@ -2072,7 +1991,7 @@ class _LifestyleCard extends StatelessWidget {
                 title,
                 style: _style(
                   context,
-                  21,
+                  18,
                   weight: FontWeight.w500,
                   color: Colors.white,
                 ),
@@ -2180,7 +2099,7 @@ class _GroupGrid extends StatelessWidget {
                     style: _style(
                       context,
                       20,
-                      weight: FontWeight.w700,
+                      weight: FontWeight.w500,
                       letterSpacing: -0.55,
                     ),
                   ),
@@ -2195,7 +2114,7 @@ class _GroupGrid extends StatelessWidget {
                     style: _style(
                       context,
                       18,
-                      weight: FontWeight.w700,
+                      weight: FontWeight.w400,
                       color: const Color(0xFF555B5D),
                       height: 1.5,
                     ),
@@ -2234,7 +2153,7 @@ class _HomeSettingsLink extends StatelessWidget {
             _style(
               context,
               18,
-              weight: FontWeight.w700,
+              weight: FontWeight.w500,
               color: const Color(0xFF555B5D),
             ).copyWith(
               decoration: TextDecoration.underline,
@@ -2281,14 +2200,17 @@ class _AssetsFab extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                '내 자산 확인',
-                style: _style(
-                  context,
-                  21,
-                  weight: FontWeight.w700,
-                  color: Colors.white,
-                  letterSpacing: -0.45,
+              Transform.scale(
+                scaleX: 1.2,
+                child: Text(
+                  '내 자산 확인',
+                  style: _style(
+                    context,
+                    18,
+                    weight: FontWeight.w600,
+                    color: Colors.white,
+                    letterSpacing: -0.45,
+                  ),
                 ),
               ),
               SizedBox(width: 10 * scale),
@@ -2374,15 +2296,18 @@ class _NavItem extends StatelessWidget {
               child: _NavGlyph(kind: kind),
             ),
             SizedBox(height: 3 * scale),
-            Text(
-              label,
-              style: _style(
-                context,
-                13,
-                weight: selected ? FontWeight.w800 : FontWeight.w600,
-                color: color,
-                height: 0.8,
-                letterSpacing: -0.35,
+            Transform.scale(
+              scaleX: 1.08,
+              child: Text(
+                label,
+                style: _style(
+                  context,
+                  15,
+                  weight: selected ? FontWeight.w500 : FontWeight.w400,
+                  color: color,
+                  height: 0.8,
+                  letterSpacing: -0.35,
+                ),
               ),
             ),
           ],

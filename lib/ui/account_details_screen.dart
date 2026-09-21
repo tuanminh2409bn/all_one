@@ -11,7 +11,7 @@ import 'transfer_recipient_screen.dart';
 const _detailsInk = Color(0xFF141820);
 const _detailsMuted = Color(0xFF626B79);
 const _detailsSecondary = Color(0xFF505866);
-const _detailsBlue = Color(0xFF0068F5);
+const _detailsGreen = Color(0xFF159757);
 
 enum _HistoryPeriodMode { monthly, range }
 
@@ -286,7 +286,7 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
     final account = _selectedAccount;
     final recordedYears = <int>{
       if (_historyFilter.month.year <= currentYear) _historyFilter.month.year,
-      currentYear - 3,
+      currentYear - 100,
       if (account != null)
         ...widget.dataStore
             .transactionsFor(account.id)
@@ -427,12 +427,23 @@ class _DetailsHeader extends StatelessWidget {
     return Positioned(
       left: 0,
       right: 0,
-      top: 76,
+      top: 100.5,
       height: 58,
       child: Stack(
         children: [
           Positioned(
-            left: 26,
+            left: 35,
+            top: -7,
+            width: 56,
+            height: 63,
+            child: Image.asset(
+              'assets/images/ref_transaction_back.png',
+              fit: BoxFit.fill,
+              filterQuality: FilterQuality.high,
+            ),
+          ),
+          Positioned(
+            left: 33,
             top: 0,
             width: 50,
             height: 50,
@@ -441,26 +452,25 @@ class _DetailsHeader extends StatelessWidget {
               tooltip: '뒤로',
               onPressed: onBack,
               padding: EdgeInsets.zero,
-              icon: const Icon(
-                Icons.arrow_back_rounded,
-                size: 32,
-                color: _detailsInk,
-              ),
+              icon: const SizedBox.shrink(),
             ),
           ),
-          const Positioned(
+          Positioned(
             left: 135,
             right: 135,
             top: 6,
-            child: Text(
-              '거래내역조회',
-              key: Key('account-details-title'),
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: _detailsInk,
-                fontSize: 24,
-                fontWeight: FontWeight.w700,
-                letterSpacing: -1,
+            child: Transform.scale(
+              scaleX: 0.925,
+              child: const Text(
+                '거래내역조회',
+                key: Key('account-details-title'),
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: _detailsInk,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -1,
+                ),
               ),
             ),
           ),
@@ -474,16 +484,22 @@ class _DetailsHeader extends StatelessWidget {
               tooltip: '홈',
               onPressed: onHome,
               padding: EdgeInsets.zero,
-              icon: const _AccountHomeIcon(key: Key('account-home-glyph')),
+              icon: const SizedBox.shrink(key: Key('account-home-glyph')),
             ),
           ),
           Positioned(
             right: 23,
-            top: 6,
+            top: -6,
+            width: 116,
+            height: 63,
             child: Semantics(
               label: '메뉴 검색',
               image: true,
-              child: const _AccountMenuSearchIcon(),
+              child: Image.asset(
+                'assets/images/ref_transaction_header_actions.png',
+                fit: BoxFit.fill,
+                filterQuality: FilterQuality.high,
+              ),
             ),
           ),
         ],
@@ -504,8 +520,8 @@ class _AccountIdentity extends StatelessWidget {
     final number = account?.accountNumber ?? '302-2180-4371-91';
     return Positioned(
       left: 35,
-      right: 35,
-      top: 202,
+      right: 42,
+      top: 200,
       height: 66,
       child: Row(
         children: [
@@ -515,7 +531,11 @@ class _AccountIdentity extends StatelessWidget {
             child: SizedBox.square(
               dimension: 58,
               child: account == null || account!.bankCode == '농협'
-                  ? const _AccountNhMark()
+                  ? Image.asset(
+                      'assets/images/ref_transaction_nh_logo.png',
+                      fit: BoxFit.cover,
+                      filterQuality: FilterQuality.high,
+                    )
                   : BankLogo(bankCode: account!.bankCode, size: 58),
             ),
           ),
@@ -525,39 +545,62 @@ class _AccountIdentity extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  key: const Key('account-type-text'),
-                  accountType,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: _detailsInk,
-                    fontSize: 23,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -1,
+                Transform.scale(
+                  scaleX: 1.004,
+                  scaleY: 0.98,
+                  alignment: Alignment.centerLeft,
+                  child: Transform.translate(
+                    offset: const Offset(0, -1.1),
+                    child: Text(
+                      key: const Key('account-type-text'),
+                      accountType,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: _detailsInk,
+                        fontSize: 23,
+                        fontWeight: FontWeight.w400,
+                        letterSpacing: -1,
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  key: const Key('account-number-text'),
-                  '$bank  $number',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: _detailsMuted,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: -0.55,
+                Transform.translate(
+                  offset: const Offset(0, -0.4),
+                  child: Transform.scale(
+                    scaleX: 1.109,
+                    scaleY: 1.126,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      key: const Key('account-number-text'),
+                      '$bank $number',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: _detailsMuted,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w400,
+                        letterSpacing: -0.55,
+                      ),
+                    ),
                   ),
                 ),
               ],
             ),
           ),
           const SizedBox(width: 8),
-          const Icon(
-            Icons.keyboard_arrow_down_rounded,
-            size: 29,
-            color: _detailsInk,
+          SizedBox(
+            width: 29,
+            height: 58,
+            child: Transform.scale(
+              scale: 2.32,
+              child: Image.asset(
+                'assets/images/ref_transaction_account_chevron.png',
+                fit: BoxFit.contain,
+                filterQuality: FilterQuality.high,
+              ),
+            ),
           ),
         ],
       ),
@@ -580,30 +623,38 @@ class _AccountSummary extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        const Positioned(
-          left: 35,
-          top: 309,
-          child: Text(
-            '잔액',
-            style: TextStyle(
-              color: _detailsSecondary,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              letterSpacing: -0.6,
+        Positioned(
+          left: 42,
+          top: 307.2,
+          child: Transform.scale(
+            scaleX: 0.975,
+            alignment: Alignment.centerLeft,
+            child: const Text(
+              '잔액',
+              style: TextStyle(
+                color: _detailsSecondary,
+                fontSize: 20,
+                fontWeight: FontWeight.w400,
+                letterSpacing: -0.6,
+              ),
             ),
           ),
         ),
         Positioned(
-          right: 36,
-          top: 305,
-          child: Text(
-            key: const Key('account-balance-text'),
-            '${_formatDetailsMoney(balance)}원',
-            style: const TextStyle(
-              color: _detailsInk,
-              fontSize: 28,
-              fontWeight: FontWeight.w700,
-              letterSpacing: -1.1,
+          right: 41.5,
+          top: 300.5,
+          child: Transform.scale(
+            scaleX: 1.055,
+            alignment: Alignment.centerRight,
+            child: Text(
+              key: const Key('account-balance-text'),
+              '${_formatDetailsMoney(balance)}원',
+              style: const TextStyle(
+                color: _detailsInk,
+                fontSize: 28,
+                fontWeight: FontWeight.w400,
+                letterSpacing: -1.1,
+              ),
             ),
           ),
         ),
@@ -667,12 +718,15 @@ class _AccountActionButton extends StatelessWidget {
         ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          fontSize: 22,
-          fontWeight: FontWeight.w600,
-          letterSpacing: -0.8,
+      child: Transform.scale(
+        scaleX: accent ? 1.03 : 1,
+        child: Text(
+          label,
+          style: const TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.w400,
+            letterSpacing: -0.8,
+          ),
         ),
       ),
     );
@@ -684,204 +738,13 @@ class _TransactionBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(22),
-      child: ColoredBox(
-        color: const Color(0xFFF5F5F5),
-        child: Stack(
-          children: [
-            const Positioned(
-              left: 62,
-              top: 33,
-              child: Text(
-                '뚜레쥬르',
-                style: TextStyle(
-                  color: Color(0xFF3A3B3C),
-                  fontSize: 23,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.8,
-                ),
-              ),
-            ),
-            const Positioned(
-              left: 50,
-              top: 68,
-              child: Text(
-                '사전예약 최대',
-                style: TextStyle(
-                  color: Color(0xFF686B6C),
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: -0.6,
-                ),
-              ),
-            ),
-            Positioned(
-              left: 187,
-              top: 10,
-              width: 161,
-              height: 107,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.asset(
-                  'assets/images/transaction_tlj_cakes.jpg',
-                  fit: BoxFit.cover,
-                  filterQuality: FilterQuality.high,
-                ),
-              ),
-            ),
-            const Positioned(
-              right: 42,
-              top: 33,
-              child: Text(
-                '추석 선물',
-                style: TextStyle(
-                  color: Color(0xFF3A3B3C),
-                  fontSize: 23,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.8,
-                ),
-              ),
-            ),
-            const Positioned(
-              right: 43,
-              top: 67,
-              child: Text(
-                '30%OFF',
-                style: TextStyle(
-                  color: Color(0xFFF0442D),
-                  fontSize: 21,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.4,
-                ),
-              ),
-            ),
-            Positioned(
-              right: 9,
-              top: 8,
-              child: Container(
-                width: 23,
-                height: 23,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFB9BABA),
-                  shape: BoxShape.circle,
-                ),
-                child: const Center(
-                  child: Text(
-                    'i',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+    return Image.asset(
+      'assets/images/ref_transaction_banner.png',
+      key: const Key('account-transaction-promotion'),
+      fit: BoxFit.fill,
+      filterQuality: FilterQuality.high,
     );
   }
-}
-
-class _AccountNhMark extends StatelessWidget {
-  const _AccountNhMark();
-
-  @override
-  Widget build(BuildContext context) {
-    return const ColoredBox(
-      color: Color(0xFF0875BE),
-      child: Center(
-        child: Text(
-          'NH',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 22,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _AccountHomeIcon extends StatelessWidget {
-  const _AccountHomeIcon({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const SizedBox.square(
-      dimension: 30,
-      child: CustomPaint(painter: _AccountHomePainter()),
-    );
-  }
-}
-
-class _AccountHomePainter extends CustomPainter {
-  const _AccountHomePainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = _detailsInk
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.4
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    final home = Path()
-      ..moveTo(3, 12)
-      ..lineTo(15, 2.5)
-      ..lineTo(26.5, 12)
-      ..moveTo(5, 10.5)
-      ..lineTo(5, 26.5)
-      ..lineTo(12, 26.5)
-      ..lineTo(12, 17.5)
-      ..lineTo(18, 17.5)
-      ..lineTo(18, 26.5)
-      ..lineTo(24.5, 26.5)
-      ..lineTo(24.5, 10.5);
-
-    canvas.drawPath(home, paint);
-  }
-
-  @override
-  bool shouldRepaint(_AccountHomePainter oldDelegate) => false;
-}
-
-class _AccountMenuSearchIcon extends StatelessWidget {
-  const _AccountMenuSearchIcon();
-
-  @override
-  Widget build(BuildContext context) {
-    return const SizedBox.square(
-      dimension: 37,
-      child: CustomPaint(painter: _AccountMenuSearchPainter()),
-    );
-  }
-}
-
-class _AccountMenuSearchPainter extends CustomPainter {
-  const _AccountMenuSearchPainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final stroke = Paint()
-      ..color = _detailsInk
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.5
-      ..strokeCap = StrokeCap.round
-      ..isAntiAlias = true;
-    for (final y in <double>[7, 15, 23]) {
-      canvas.drawLine(Offset(2, y), Offset(28, y), stroke);
-    }
-    canvas.drawCircle(const Offset(27.5, 26), 6, stroke);
-    canvas.drawLine(const Offset(32, 30.5), const Offset(35.5, 34), stroke);
-  }
-
-  @override
-  bool shouldRepaint(_AccountMenuSearchPainter oldDelegate) => false;
 }
 
 class _TransactionList extends StatelessWidget {
@@ -910,28 +773,33 @@ class _TransactionList extends StatelessWidget {
     return Stack(
       children: [
         _FilterBar(
-          top: 670,
+          top: 670.8,
           filterKey: const Key('account-history-filter'),
           label: filterLabel,
           onTap: onFilterTap,
         ),
         Positioned(
           left: 35,
-          top: 758,
-          child: Text(
-            key: const Key('account-history-range'),
-            rangeLabel,
-            style: const TextStyle(
-              color: _detailsSecondary,
-              fontSize: 19.5,
-              fontWeight: FontWeight.w600,
-              letterSpacing: -0.55,
+          top: 751.3,
+          child: Transform.scale(
+            scaleX: 1.06,
+            scaleY: 0.92,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              key: const Key('account-history-range'),
+              rangeLabel,
+              style: const TextStyle(
+                color: _detailsSecondary,
+                fontSize: 19.5,
+                fontWeight: FontWeight.w400,
+                letterSpacing: -0.55,
+              ),
             ),
           ),
         ),
         Positioned(
-          right: 35,
-          top: 754,
+          right: 30,
+          top: 751.8,
           child: _BalanceVisibilityToggle(
             isVisible: showTransactionBalances,
             onTap: onBalanceVisibilityTap,
@@ -940,7 +808,7 @@ class _TransactionList extends StatelessWidget {
         const Positioned(
           left: 35,
           right: 35,
-          top: 845,
+          top: 847,
           child: Divider(height: 1, thickness: 1, color: Color(0xFFE2E3E3)),
         ),
         ..._transactionWidgets(),
@@ -976,7 +844,9 @@ class _TransactionList extends StatelessWidget {
           top: cursor,
           title: transaction.title,
           transactionId: transaction.id,
-          dateTime: _formatDetailsDateTime(transaction.occurredAt),
+          dateTime:
+              '${_formatDetailsDateTime(transaction.occurredAt)}'
+              '${transaction.channel.trim().isEmpty ? '' : ' | ${transaction.channel.trim()}'}',
           amount: '${_formatDetailsMoney(signed.abs())}원',
           balance:
               '${_formatDetailsMoney(store.runningBalanceFor(transaction))}원',
@@ -1017,7 +887,7 @@ class _BalanceVisibilityToggle extends StatelessWidget {
               style: const TextStyle(
                 color: _detailsInk,
                 fontSize: 19,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w400,
                 letterSpacing: -0.7,
               ),
             ),
@@ -1062,8 +932,8 @@ class _BalanceVisibilityToggle extends StatelessWidget {
 class _TransactionLayoutMetrics {
   const _TransactionLayoutMetrics._();
 
-  static const firstRowTop = 872.0;
-  static const rowExtent = 176.0;
+  static const firstRowTop = 881.0;
+  static const rowExtent = 179.0;
   static const bottomPadding = 80.0;
 
   static double contentBottom(List<LedgerTransaction> transactions) =>
@@ -1102,17 +972,21 @@ class _FilterBar extends StatelessWidget {
               behavior: HitTestBehavior.opaque,
               onTap: onTap,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 18, 42, 18),
+                padding: const EdgeInsets.fromLTRB(20, 18, 40.5, 18),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      label,
-                      style: const TextStyle(
-                        color: Color(0xFF444849),
-                        fontSize: 19,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: -0.7,
+                    Transform.scale(
+                      scaleX: 0.928,
+                      alignment: Alignment.centerRight,
+                      child: Text(
+                        label,
+                        style: const TextStyle(
+                          color: Color(0xFF444849),
+                          fontSize: 19,
+                          fontWeight: FontWeight.w400,
+                          letterSpacing: -0.7,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 15),
@@ -1148,14 +1022,23 @@ class _HistoryFilterSheet extends StatefulWidget {
 }
 
 class _HistoryFilterSheetState extends State<_HistoryFilterSheet> {
-  late _HistoryFilter _filter = widget.initialFilter;
+  late _HistoryFilter _filter;
   late final TextEditingController _minimumController;
   late final TextEditingController _maximumController;
-  String? _validationMessage;
+  bool _showAdvanced = false;
 
   @override
   void initState() {
     super.initState();
+    _filter = widget.initialFilter.copyWith(
+      periodMode: _HistoryPeriodMode.monthly,
+      month: DateTime(
+        widget.latestSelectableDate.year,
+        widget.latestSelectableDate.month,
+      ),
+      type: _HistoryType.all,
+      sort: _HistorySort.oldest,
+    );
     _minimumController = TextEditingController(
       text: _filter.minimumAmount?.toString() ?? '',
     );
@@ -1186,7 +1069,6 @@ class _HistoryFilterSheetState extends State<_HistoryFilterSheet> {
         startDate: startDate,
         endDate: endDate,
       );
-      _validationMessage = null;
     });
   }
 
@@ -1205,7 +1087,6 @@ class _HistoryFilterSheetState extends State<_HistoryFilterSheet> {
       _filter = start
           ? _filter.copyWith(startDate: selected)
           : _filter.copyWith(endDate: selected);
-      _validationMessage = null;
     });
   }
 
@@ -1234,358 +1115,45 @@ class _HistoryFilterSheetState extends State<_HistoryFilterSheet> {
     setState(() => _filter = _filter.copyWith(month: selected));
   }
 
-  void _submit() {
-    final minimum = int.tryParse(_minimumController.text);
-    final maximum = int.tryParse(_maximumController.text);
-    if (_filter.periodMode == _HistoryPeriodMode.range &&
-        _filter.startDate.isAfter(_filter.endDate)) {
-      setState(() => _validationMessage = '시작일은 종료일보다 늦을 수 없어요.');
-      return;
-    }
-    if (minimum != null && maximum != null && minimum > maximum) {
-      setState(() => _validationMessage = '최소금액은 최대금액보다 클 수 없어요.');
-      return;
-    }
-    Navigator.of(context).pop(
-      _filter.copyWith(
-        minimumAmount: minimum,
-        maximumAmount: maximum,
-        clearMinimumAmount: minimum == null,
-        clearMaximumAmount: maximum == null,
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final compact = MediaQuery.sizeOf(context).height < 1000;
-    final horizontalPadding = compact ? 20.0 : 28.0;
-    final modeHeight = compact ? 50.0 : 72.0;
-    final presetHeight = compact ? 46.0 : 68.0;
-    final fieldHeight = compact ? 48.0 : 64.0;
-    final monthFieldHeight = compact ? 52.0 : 70.0;
-    final typeHeight = compact ? 60.0 : 92.0;
-    final optionHeight = compact ? 48.0 : 68.0;
-    final amountHeight = compact ? 52.0 : 68.0;
-    final sectionGap = compact ? 18.0 : 30.0;
-    final choiceGap = compact ? 8.0 : 14.0;
-    return FractionallySizedBox(
-      heightFactor: compact ? .95 : .92,
-      child: DecoratedBox(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        child: SafeArea(
-          top: false,
+  Future<void> _showValidationDialog(String message) async {
+    await showDialog<void>(
+      context: context,
+      barrierColor: const Color(0x66000000),
+      builder: (dialogContext) => Dialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 35),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(35, 54, 35, 29),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Padding(
-                padding: EdgeInsets.fromLTRB(
-                  horizontalPadding,
-                  compact ? 14 : 24,
-                  compact ? 12 : 20,
-                  compact ? 4 : 10,
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        '조회 조건 설정',
-                        style: TextStyle(
-                          color: _detailsInk,
-                          fontSize: compact ? 24 : 27,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: -1,
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      key: const Key('history-filter-close'),
-                      onPressed: () => Navigator.of(context).pop(),
-                      icon: Icon(Icons.close_rounded, size: compact ? 28 : 32),
-                    ),
-                  ],
+              Text(
+                message,
+                style: const TextStyle(
+                  color: _detailsInk,
+                  fontSize: 20,
+                  height: 1.7,
+                  fontWeight: FontWeight.w400,
+                  letterSpacing: -0.6,
                 ),
               ),
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: EdgeInsets.fromLTRB(
-                    horizontalPadding,
-                    compact ? 4 : 8,
-                    horizontalPadding,
-                    compact ? 12 : 22,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const _FilterSectionTitle('조회기간'),
-                      SizedBox(height: choiceGap),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _FilterChoiceButton(
-                              key: const Key('history-period-monthly'),
-                              label: '월별',
-                              selected:
-                                  _filter.periodMode ==
-                                  _HistoryPeriodMode.monthly,
-                              height: modeHeight,
-                              onTap: () => setState(
-                                () => _filter = _filter.copyWith(
-                                  periodMode: _HistoryPeriodMode.monthly,
-                                ),
-                              ),
-                            ),
-                          ),
-                          SizedBox(width: compact ? 8 : 12),
-                          Expanded(
-                            child: _FilterChoiceButton(
-                              key: const Key('history-period-range'),
-                              label: '기간별',
-                              selected:
-                                  _filter.periodMode ==
-                                  _HistoryPeriodMode.range,
-                              height: modeHeight,
-                              onTap: () => setState(
-                                () => _filter = _filter.copyWith(
-                                  periodMode: _HistoryPeriodMode.range,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: compact ? 8 : 12),
-                      if (_filter.periodMode == _HistoryPeriodMode.range) ...[
-                        Row(
-                          children: [
-                            for (final entry in const [
-                              (_HistoryRangePreset.week, '1주일'),
-                              (_HistoryRangePreset.month, '1개월'),
-                              (_HistoryRangePreset.threeMonths, '3개월'),
-                              (_HistoryRangePreset.sixMonths, '6개월'),
-                            ]) ...[
-                              Expanded(
-                                child: _FilterChoiceButton(
-                                  key: Key('history-range-${entry.$1.name}'),
-                                  label: entry.$2,
-                                  selected: _filter.rangePreset == entry.$1,
-                                  height: presetHeight,
-                                  onTap: () => _setRangePreset(entry.$1),
-                                ),
-                              ),
-                              if (entry.$1 != _HistoryRangePreset.sixMonths)
-                                SizedBox(width: compact ? 6 : 10),
-                            ],
-                          ],
-                        ),
-                        SizedBox(height: compact ? 10 : 16),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _DateFilterField(
-                                key: const Key('history-start-date'),
-                                date: _filter.startDate,
-                                height: fieldHeight,
-                                compact: compact,
-                                onTap: () => _pickRangeDate(start: true),
-                              ),
-                            ),
-                            const Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 9),
-                              child: Text(
-                                '-',
-                                style: TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              child: _DateFilterField(
-                                key: const Key('history-end-date'),
-                                date: _filter.endDate,
-                                height: fieldHeight,
-                                compact: compact,
-                                onTap: () => _pickRangeDate(start: false),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ] else ...[
-                        InkWell(
-                          key: const Key('history-month-field'),
-                          onTap: _pickMonth,
-                          child: Container(
-                            height: monthFieldHeight,
-                            decoration: const BoxDecoration(
-                              border: Border(
-                                bottom: BorderSide(color: Color(0xFFD4D8DF)),
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    '${_filter.month.year}년 '
-                                    '${_filter.month.month.toString().padLeft(2, '0')}월',
-                                    style: TextStyle(
-                                      color: _detailsInk,
-                                      fontSize: compact ? 19 : 24,
-                                      fontWeight: FontWeight.w600,
-                                      letterSpacing: -.7,
-                                    ),
-                                  ),
-                                ),
-                                const Icon(
-                                  Icons.keyboard_arrow_down_rounded,
-                                  size: 31,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                      SizedBox(height: compact ? 18 : 34),
-                      const _FilterSectionTitle('유형'),
-                      SizedBox(height: choiceGap),
-                      Row(
-                        children: [
-                          for (final entry in const [
-                            (_HistoryType.all, '전체'),
-                            (_HistoryType.deposit, '입금'),
-                            (_HistoryType.withdrawal, '출금'),
-                            (_HistoryType.shinhanAtm, '신한\nATM'),
-                          ]) ...[
-                            Expanded(
-                              child: _FilterChoiceButton(
-                                key: Key('history-type-${entry.$1.name}'),
-                                label: entry.$2,
-                                selected: _filter.type == entry.$1,
-                                height: typeHeight,
-                                onTap: () => setState(
-                                  () => _filter = _filter.copyWith(
-                                    type: entry.$1,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            if (entry.$1 != _HistoryType.shinhanAtm)
-                              SizedBox(width: compact ? 6 : 10),
-                          ],
-                        ],
-                      ),
-                      SizedBox(height: sectionGap),
-                      const _FilterSectionTitle('정렬'),
-                      SizedBox(height: choiceGap),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _FilterChoiceButton(
-                              key: const Key('history-sort-newest'),
-                              label: '최신순',
-                              selected: _filter.sort == _HistorySort.newest,
-                              height: optionHeight,
-                              onTap: () => setState(
-                                () => _filter = _filter.copyWith(
-                                  sort: _HistorySort.newest,
-                                ),
-                              ),
-                            ),
-                          ),
-                          SizedBox(width: compact ? 8 : 12),
-                          Expanded(
-                            child: _FilterChoiceButton(
-                              key: const Key('history-sort-oldest'),
-                              label: '과거순',
-                              selected: _filter.sort == _HistorySort.oldest,
-                              height: optionHeight,
-                              onTap: () => setState(
-                                () => _filter = _filter.copyWith(
-                                  sort: _HistorySort.oldest,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: sectionGap),
-                      const _FilterSectionTitle('금액범위'),
-                      SizedBox(height: choiceGap),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _AmountFilterField(
-                              key: const Key('history-minimum-amount'),
-                              controller: _minimumController,
-                              hint: '최소금액',
-                              height: amountHeight,
-                              compact: compact,
-                            ),
-                          ),
-                          const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 9),
-                            child: Text(
-                              '-',
-                              style: TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            child: _AmountFilterField(
-                              key: const Key('history-maximum-amount'),
-                              controller: _maximumController,
-                              hint: '최대금액',
-                              height: amountHeight,
-                              compact: compact,
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (_validationMessage != null) ...[
-                        const SizedBox(height: 10),
-                        Text(
-                          _validationMessage!,
-                          style: const TextStyle(
-                            color: Color(0xFFE23A3A),
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-              Padding(
-                padding: EdgeInsets.fromLTRB(
-                  horizontalPadding,
-                  compact ? 8 : 12,
-                  horizontalPadding,
-                  compact ? 12 : 18,
-                ),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: compact ? 56 : 70,
-                  child: FilledButton(
-                    key: const Key('history-filter-apply'),
-                    onPressed: _submit,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: _detailsBlue,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15),
-                      ),
+              const SizedBox(height: 43),
+              SizedBox(
+                height: 71,
+                child: OutlinedButton(
+                  key: const Key('history-filter-validation-confirm'),
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: _detailsGreen,
+                    side: const BorderSide(color: _detailsGreen, width: 1.4),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
                     ),
-                    child: Text(
-                      '조회',
-                      style: TextStyle(
-                        fontSize: compact ? 20 : 24,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
+                  ),
+                  child: const Text(
+                    '확인',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
                   ),
                 ),
               ),
@@ -1595,23 +1163,459 @@ class _HistoryFilterSheetState extends State<_HistoryFilterSheet> {
       ),
     );
   }
+
+  Future<void> _submit() async {
+    final minimum = int.tryParse(_minimumController.text);
+    final maximum = int.tryParse(_maximumController.text);
+    final today = DateTime(
+      widget.latestSelectableDate.year,
+      widget.latestSelectableDate.month,
+      widget.latestSelectableDate.day,
+    );
+    final startsInFuture = _filter.periodMode == _HistoryPeriodMode.monthly
+        ? DateTime(_filter.month.year, _filter.month.month).isAfter(today)
+        : _filter.startDate.isAfter(today);
+    if (startsInFuture) {
+      await _showValidationDialog('조회시작날짜는 오늘날짜이거나 과거날짜이어야합니다.');
+      return;
+    }
+    if (_filter.periodMode == _HistoryPeriodMode.range &&
+        _filter.startDate.isAfter(_filter.endDate)) {
+      await _showValidationDialog('시작일은 종료일보다 늦을 수 없습니다.');
+      return;
+    }
+    if (minimum != null && maximum != null && minimum > maximum) {
+      await _showValidationDialog('최소금액은 최대금액보다 클 수 없습니다.');
+      return;
+    }
+    if (!mounted) return;
+    Navigator.of(context).pop(
+      _filter.copyWith(
+        minimumAmount: _showAdvanced ? minimum : null,
+        maximumAmount: _showAdvanced ? maximum : null,
+        clearMinimumAmount: !_showAdvanced || minimum == null,
+        clearMaximumAmount: !_showAdvanced || maximum == null,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) => _buildReferenceFilter(context);
+
+  Widget _buildReferenceFilter(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final unit = (mediaQuery.size.width / 588).clamp(.62, 1.0);
+    double u(double value) => value * unit;
+    final horizontalPadding = u(35);
+    final choiceGap = u(7);
+    final choiceHeight = u(54);
+
+    return FractionallySizedBox(
+      heightFactor: _showAdvanced ? .95 : .777,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(u(28))),
+        ),
+        child: Stack(
+          children: [
+            Positioned(
+              left: horizontalPadding,
+              right: u(72),
+              top: u(28),
+              height: u(46),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  '조회 조건을 선택해 주세요',
+                  style: TextStyle(
+                    color: _detailsInk,
+                    fontSize: u(27),
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: u(-1),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              right: u(22),
+              top: u(24),
+              width: u(52),
+              height: u(52),
+              child: IconButton(
+                key: const Key('history-filter-close'),
+                onPressed: () => Navigator.of(context).pop(),
+                padding: EdgeInsets.zero,
+                icon: Icon(
+                  Icons.close_rounded,
+                  size: u(35),
+                  color: _detailsInk,
+                ),
+              ),
+            ),
+            Positioned(
+              left: horizontalPadding,
+              top: u(108),
+              child: _FilterSectionTitle('조회 기간', unit: unit),
+            ),
+            Positioned(
+              left: horizontalPadding,
+              right: horizontalPadding,
+              top: u(155),
+              height: choiceHeight,
+              child: Row(
+                children: [
+                  for (final entry in const [
+                    (_HistoryRangePreset.week, '1주일'),
+                    (_HistoryRangePreset.month, '1개월'),
+                    (_HistoryRangePreset.threeMonths, '3개월'),
+                    (_HistoryRangePreset.sixMonths, '6개월'),
+                  ]) ...[
+                    Expanded(
+                      child: _FilterChoiceButton(
+                        key: Key('history-range-${entry.$1.name}'),
+                        label: entry.$2,
+                        selected:
+                            _filter.periodMode == _HistoryPeriodMode.range &&
+                            _filter.rangePreset == entry.$1,
+                        height: choiceHeight,
+                        unit: unit,
+                        onTap: () => _setRangePreset(entry.$1),
+                      ),
+                    ),
+                    if (entry.$1 != _HistoryRangePreset.sixMonths)
+                      SizedBox(width: choiceGap),
+                  ],
+                ],
+              ),
+            ),
+            Positioned(
+              left: horizontalPadding,
+              right: horizontalPadding,
+              top: u(226),
+              height: choiceHeight,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _FilterChoiceButton(
+                      key: const Key('history-period-monthly'),
+                      label: '월별',
+                      selected:
+                          _filter.periodMode == _HistoryPeriodMode.monthly,
+                      height: choiceHeight,
+                      unit: unit,
+                      onTap: () => setState(
+                        () => _filter = _filter.copyWith(
+                          periodMode: _HistoryPeriodMode.monthly,
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: choiceGap),
+                  Expanded(
+                    child: _FilterChoiceButton(
+                      key: const Key('history-period-range'),
+                      label: '기간선택',
+                      selected: _filter.periodMode == _HistoryPeriodMode.range,
+                      height: choiceHeight,
+                      unit: unit,
+                      onTap: () => setState(
+                        () => _filter = _filter.copyWith(
+                          periodMode: _HistoryPeriodMode.range,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Positioned(
+              left: horizontalPadding,
+              right: horizontalPadding,
+              top: u(298),
+              height: u(79),
+              child: _buildPeriodField(unit),
+            ),
+            Positioned(
+              left: horizontalPadding,
+              top: u(430),
+              child: _FilterSectionTitle('정렬 순서', unit: unit),
+            ),
+            Positioned(
+              left: horizontalPadding,
+              right: horizontalPadding,
+              top: u(474),
+              height: choiceHeight,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _FilterChoiceButton(
+                      key: const Key('history-sort-newest'),
+                      label: '최신순',
+                      selected: _filter.sort == _HistorySort.newest,
+                      height: choiceHeight,
+                      unit: unit,
+                      onTap: () => setState(
+                        () => _filter = _filter.copyWith(
+                          sort: _HistorySort.newest,
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: choiceGap),
+                  Expanded(
+                    child: _FilterChoiceButton(
+                      key: const Key('history-sort-oldest'),
+                      label: '과거순',
+                      selected: _filter.sort == _HistorySort.oldest,
+                      height: choiceHeight,
+                      unit: unit,
+                      onTap: () => setState(
+                        () => _filter = _filter.copyWith(
+                          sort: _HistorySort.oldest,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Positioned(
+              left: horizontalPadding,
+              top: u(578),
+              child: _FilterSectionTitle('조회 구분', unit: unit),
+            ),
+            Positioned(
+              left: horizontalPadding,
+              right: horizontalPadding,
+              top: u(626),
+              height: choiceHeight,
+              child: Row(
+                children: [
+                  for (final entry in const [
+                    (_HistoryType.all, '전체'),
+                    (_HistoryType.deposit, '입금'),
+                    (_HistoryType.withdrawal, '출금'),
+                  ]) ...[
+                    Expanded(
+                      child: _FilterChoiceButton(
+                        key: Key('history-type-${entry.$1.name}'),
+                        label: entry.$2,
+                        selected: _filter.type == entry.$1,
+                        height: choiceHeight,
+                        unit: unit,
+                        onTap: () => setState(
+                          () => _filter = _filter.copyWith(type: entry.$1),
+                        ),
+                      ),
+                    ),
+                    if (entry.$1 != _HistoryType.withdrawal)
+                      SizedBox(width: choiceGap),
+                  ],
+                ],
+              ),
+            ),
+            Positioned(
+              left: horizontalPadding,
+              right: horizontalPadding,
+              top: u(728),
+              height: u(48),
+              child: Row(
+                children: [
+                  Text(
+                    '상세',
+                    style: TextStyle(
+                      color: _detailsInk,
+                      fontSize: u(20),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const Spacer(),
+                  GestureDetector(
+                    key: const Key('history-filter-advanced-toggle'),
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => setState(() => _showAdvanced = !_showAdvanced),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 160),
+                      width: u(41),
+                      height: u(27),
+                      padding: EdgeInsets.all(u(2)),
+                      decoration: BoxDecoration(
+                        color: _showAdvanced
+                            ? _detailsGreen
+                            : const Color(0xFF858585),
+                        borderRadius: BorderRadius.circular(u(16)),
+                      ),
+                      child: AnimatedAlign(
+                        duration: const Duration(milliseconds: 160),
+                        alignment: _showAdvanced
+                            ? Alignment.centerRight
+                            : Alignment.centerLeft,
+                        child: Container(
+                          width: u(23),
+                          height: u(23),
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (_showAdvanced)
+              Positioned(
+                left: horizontalPadding,
+                right: horizontalPadding,
+                top: u(790),
+                height: u(58),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _AmountFilterField(
+                        key: const Key('history-minimum-amount'),
+                        controller: _minimumController,
+                        hint: '최소금액',
+                        height: u(58),
+                        unit: unit,
+                      ),
+                    ),
+                    SizedBox(width: u(16)),
+                    Text('~', style: TextStyle(fontSize: u(20))),
+                    SizedBox(width: u(16)),
+                    Expanded(
+                      child: _AmountFilterField(
+                        key: const Key('history-maximum-amount'),
+                        controller: _maximumController,
+                        hint: '최대금액',
+                        height: u(58),
+                        unit: unit,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            Positioned(
+              left: horizontalPadding,
+              right: horizontalPadding,
+              bottom: mediaQuery.padding.bottom,
+              height: u(83),
+              child: FilledButton(
+                key: const Key('history-filter-apply'),
+                onPressed: _submit,
+                style: FilledButton.styleFrom(
+                  backgroundColor: _detailsGreen,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(u(15)),
+                  ),
+                ),
+                child: Text(
+                  '확인',
+                  style: TextStyle(
+                    fontSize: u(24),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPeriodField(double unit) {
+    double u(double value) => value * unit;
+    final border = Border.all(color: const Color(0xFFD7D7D7));
+    if (_filter.periodMode == _HistoryPeriodMode.monthly) {
+      return InkWell(
+        key: const Key('history-month-field'),
+        onTap: _pickMonth,
+        borderRadius: BorderRadius.circular(u(14)),
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: u(30)),
+          decoration: BoxDecoration(
+            border: border,
+            borderRadius: BorderRadius.circular(u(14)),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '${_filter.month.year}년 '
+                  '${_filter.month.month.toString().padLeft(2, '0')}월',
+                  style: TextStyle(
+                    color: _detailsInk,
+                    fontSize: u(27),
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: u(-.8),
+                  ),
+                ),
+              ),
+              Icon(
+                Icons.keyboard_arrow_down_rounded,
+                size: u(29),
+                color: _detailsInk,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    return Container(
+      decoration: BoxDecoration(
+        border: border,
+        borderRadius: BorderRadius.circular(u(14)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _DateFilterField(
+              key: const Key('history-start-date'),
+              date: _filter.startDate,
+              unit: unit,
+              onTap: () => _pickRangeDate(start: true),
+            ),
+          ),
+          Text(
+            '~',
+            style: TextStyle(
+              color: _detailsInk,
+              fontSize: u(22),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          Expanded(
+            child: _DateFilterField(
+              key: const Key('history-end-date'),
+              date: _filter.endDate,
+              unit: unit,
+              onTap: () => _pickRangeDate(start: false),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _FilterSectionTitle extends StatelessWidget {
-  const _FilterSectionTitle(this.label);
+  const _FilterSectionTitle(this.label, {this.unit = 1});
 
   final String label;
+  final double unit;
 
   @override
   Widget build(BuildContext context) {
-    final compact = MediaQuery.sizeOf(context).height < 1000;
     return Text(
       label,
       style: TextStyle(
         color: _detailsSecondary,
-        fontSize: compact ? 16 : 19,
-        fontWeight: FontWeight.w600,
-        letterSpacing: -.5,
+        fontSize: 19 * unit,
+        fontWeight: FontWeight.w500,
+        letterSpacing: -.5 * unit,
       ),
     );
   }
@@ -1624,16 +1628,17 @@ class _FilterChoiceButton extends StatelessWidget {
     required this.selected,
     required this.height,
     required this.onTap,
+    this.unit = 1,
   });
 
   final String label;
   final bool selected;
   final double height;
   final VoidCallback onTap;
+  final double unit;
 
   @override
   Widget build(BuildContext context) {
-    final compact = MediaQuery.sizeOf(context).height < 1000;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
@@ -1642,10 +1647,10 @@ class _FilterChoiceButton extends StatelessWidget {
         height: height,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(12 * unit),
           border: Border.all(
-            color: selected ? _detailsBlue : const Color(0xFFD4D8DF),
-            width: selected ? 1.8 : 1.1,
+            color: selected ? _detailsGreen : const Color(0xFFD5D5D5),
+            width: selected ? 1.7 * unit : 1.1 * unit,
           ),
         ),
         child: Center(
@@ -1653,10 +1658,10 @@ class _FilterChoiceButton extends StatelessWidget {
             label,
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: selected ? _detailsBlue : _detailsInk,
-              fontSize: compact ? 17 : 20,
+              color: selected ? _detailsGreen : _detailsInk,
+              fontSize: 20 * unit,
               height: 1.25,
-              fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+              fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
             ),
           ),
         ),
@@ -1669,44 +1674,29 @@ class _DateFilterField extends StatelessWidget {
   const _DateFilterField({
     super.key,
     required this.date,
-    required this.height,
-    required this.compact,
     required this.onTap,
+    this.unit = 1,
   });
 
   final DateTime date;
-  final double height;
-  final bool compact;
   final VoidCallback onTap;
+  final double unit;
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      child: Container(
-        height: height,
-        decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: Color(0xFFD4D8DF))),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                '${date.year}.${date.month.toString().padLeft(2, '0')}.'
-                '${date.day.toString().padLeft(2, '0')}',
-                style: TextStyle(
-                  color: _detailsSecondary,
-                  fontSize: compact ? 15.5 : 18,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            Icon(
-              Icons.calendar_month_outlined,
-              color: _detailsInk,
-              size: compact ? 24 : 28,
-            ),
-          ],
+      child: Center(
+        child: Text(
+          '${date.year}.${date.month.toString().padLeft(2, '0')}.'
+          '${date.day.toString().padLeft(2, '0')}',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: _detailsInk,
+            fontSize: 22 * unit,
+            fontWeight: FontWeight.w500,
+            letterSpacing: -.4 * unit,
+          ),
         ),
       ),
     );
@@ -1719,13 +1709,13 @@ class _AmountFilterField extends StatelessWidget {
     required this.controller,
     required this.hint,
     required this.height,
-    required this.compact,
+    this.unit = 1,
   });
 
   final TextEditingController controller;
   final String hint;
   final double height;
-  final bool compact;
+  final double unit;
 
   @override
   Widget build(BuildContext context) {
@@ -1738,20 +1728,20 @@ class _AmountFilterField extends StatelessWidget {
         textAlign: TextAlign.center,
         style: TextStyle(
           color: _detailsInk,
-          fontSize: compact ? 15.5 : 18,
+          fontSize: 18 * unit,
           fontWeight: FontWeight.w500,
         ),
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: const TextStyle(color: Color(0xFF9DA5B3)),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 10),
+          contentPadding: EdgeInsets.symmetric(horizontal: 10 * unit),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(14 * unit),
             borderSide: const BorderSide(color: Color(0xFFD4D8DF)),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: _detailsBlue, width: 1.8),
+            borderRadius: BorderRadius.circular(14 * unit),
+            borderSide: BorderSide(color: _detailsGreen, width: 1.8 * unit),
           ),
         ),
       ),
@@ -1781,11 +1771,7 @@ class _MonthPickerSheetState extends State<_MonthPickerSheet> {
   late final FixedExtentScrollController _yearController;
   late final FixedExtentScrollController _monthController;
 
-  int _lastMonthForYear(int year) {
-    return year == widget.latestSelectableMonth.year
-        ? widget.latestSelectableMonth.month
-        : 12;
-  }
+  int _lastMonthForYear(int year) => 12;
 
   @override
   void initState() {
@@ -1815,15 +1801,17 @@ class _MonthPickerSheetState extends State<_MonthPickerSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final compact = MediaQuery.sizeOf(context).height < 1000;
-    final horizontalPadding = compact ? 20.0 : 28.0;
-    final wheelItemExtent = compact ? 52.0 : 58.0;
+    final mediaQuery = MediaQuery.of(context);
+    final unit = (mediaQuery.size.width / 588).clamp(.62, 1.0);
+    double u(double value) => value * unit;
+    final horizontalPadding = u(35);
+    final wheelItemExtent = u(80);
     return SizedBox(
-      height: compact ? 440 : 505,
+      height: mediaQuery.size.width * 1.23,
       child: DecoratedBox(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(u(28))),
         ),
         child: SafeArea(
           top: false,
@@ -1832,18 +1820,18 @@ class _MonthPickerSheetState extends State<_MonthPickerSheet> {
               Padding(
                 padding: EdgeInsets.fromLTRB(
                   horizontalPadding,
-                  compact ? 14 : 22,
-                  compact ? 12 : 20,
-                  compact ? 4 : 8,
+                  u(27),
+                  u(22),
+                  u(8),
                 ),
                 child: Row(
                   children: [
                     Expanded(
                       child: Text(
-                        '조회 월 선택',
+                        '연/월을 선택해 주세요',
                         style: TextStyle(
                           color: _detailsInk,
-                          fontSize: compact ? 24 : 27,
+                          fontSize: u(27),
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -1851,7 +1839,8 @@ class _MonthPickerSheetState extends State<_MonthPickerSheet> {
                     IconButton(
                       key: const Key('history-month-picker-close'),
                       onPressed: () => Navigator.of(context).pop(),
-                      icon: Icon(Icons.close_rounded, size: compact ? 28 : 32),
+                      padding: EdgeInsets.zero,
+                      icon: Icon(Icons.close_rounded, size: u(35)),
                     ),
                   ],
                 ),
@@ -1860,9 +1849,16 @@ class _MonthPickerSheetState extends State<_MonthPickerSheet> {
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    Container(
+                    Positioned(
+                      left: mediaQuery.size.width / 2,
+                      right: horizontalPadding,
                       height: wheelItemExtent,
-                      color: const Color(0xFFF2F5FB),
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF7F7F7),
+                          borderRadius: BorderRadius.circular(u(15)),
+                        ),
+                      ),
                     ),
                     Row(
                       children: [
@@ -1902,9 +1898,9 @@ class _MonthPickerSheetState extends State<_MonthPickerSheet> {
                                     key: Key('history-year-option-$value'),
                                     style: TextStyle(
                                       color: value == _year
-                                          ? _detailsInk
-                                          : const Color(0xFFBBC1CB),
-                                      fontSize: compact ? 22 : 25,
+                                          ? _detailsGreen
+                                          : _detailsInk,
+                                      fontSize: u(24),
                                       fontWeight: value == _year
                                           ? FontWeight.w500
                                           : FontWeight.w400,
@@ -1935,9 +1931,9 @@ class _MonthPickerSheetState extends State<_MonthPickerSheet> {
                                     key: Key('history-month-option-$value'),
                                     style: TextStyle(
                                       color: value == _month
-                                          ? _detailsInk
-                                          : const Color(0xFFBBC1CB),
-                                      fontSize: compact ? 22 : 25,
+                                          ? _detailsGreen
+                                          : _detailsInk,
+                                      fontSize: u(24),
                                       fontWeight: value == _month
                                           ? FontWeight.w500
                                           : FontWeight.w400,
@@ -1956,28 +1952,28 @@ class _MonthPickerSheetState extends State<_MonthPickerSheet> {
               Padding(
                 padding: EdgeInsets.fromLTRB(
                   horizontalPadding,
-                  compact ? 8 : 14,
+                  u(8),
                   horizontalPadding,
-                  compact ? 12 : 18,
+                  0,
                 ),
                 child: SizedBox(
                   width: double.infinity,
-                  height: compact ? 56 : 70,
+                  height: u(83),
                   child: FilledButton(
                     key: const Key('history-month-picker-apply'),
                     onPressed: () =>
                         Navigator.of(context).pop(DateTime(_year, _month)),
                     style: FilledButton.styleFrom(
-                      backgroundColor: _detailsBlue,
+                      backgroundColor: _detailsGreen,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15),
+                        borderRadius: BorderRadius.circular(u(15)),
                       ),
                     ),
                     child: Text(
-                      '조회',
+                      '확인',
                       style: TextStyle(
-                        fontSize: compact ? 20 : 24,
-                        fontWeight: FontWeight.w700,
+                        fontSize: u(24),
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
@@ -2023,84 +2019,108 @@ class _TransactionRow extends StatelessWidget {
         children: [
           Positioned(
             left: 0,
-            top: 34,
+            top: 36,
             width: 320,
             height: 36,
-            child: Text(
-              title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: _detailsInk,
-                fontSize: 24,
-                fontWeight: FontWeight.w600,
-                letterSpacing: -0.8,
+            child: Transform.scale(
+              scaleX: 1.065,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: _detailsInk,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w400,
+                  letterSpacing: -0.8,
+                ),
               ),
             ),
           ),
           Positioned(
-            right: 0,
-            top: 6,
-            child: Text(
-              positive ? '입금' : '출금',
-              style: TextStyle(
-                color: positive
-                    ? const Color(0xFF1976D2)
-                    : const Color(0xFFEF4D4F),
-                fontSize: 19,
-                fontWeight: FontWeight.w600,
-                letterSpacing: -0.6,
+            right: 5,
+            top: positive ? 3 : 5.1,
+            child: Transform.scale(
+              scaleX: 1.08,
+              scaleY: positive ? 1.2 : 0.9,
+              alignment: Alignment.centerRight,
+              child: Text(
+                positive ? '입금' : '출금',
+                style: TextStyle(
+                  color: positive
+                      ? const Color(0xFF1976D2)
+                      : const Color(0xFFEF4D4F),
+                  fontSize: 19,
+                  fontWeight: FontWeight.w400,
+                  letterSpacing: -0.6,
+                ),
               ),
             ),
           ),
           Positioned(
             left: 0,
-            top: 3,
-            child: Text(
-              key: Key('account-transaction-time-$transactionId'),
-              dateTime,
-              style: const TextStyle(
-                color: _detailsSecondary,
-                fontSize: 19.5,
-                fontWeight: FontWeight.w600,
-                letterSpacing: -0.5,
+            top: dateTime.contains('|') ? 1.25 : 1,
+            child: Transform.scale(
+              scaleX: 1.059,
+              scaleY: dateTime.contains('|') ? 0.73 : 0.9,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                key: Key('account-transaction-time-$transactionId'),
+                dateTime,
+                style: const TextStyle(
+                  color: _detailsSecondary,
+                  fontSize: 19.5,
+                  fontWeight: FontWeight.w400,
+                  letterSpacing: -0.5,
+                ),
               ),
             ),
           ),
           Positioned(
             right: 0,
-            top: 35,
-            child: Text(
-              amount,
-              style: TextStyle(
-                color: positive
-                    ? const Color(0xFF1976D2)
-                    : const Color(0xFFEF4D4F),
-                fontSize: 26,
-                fontWeight: FontWeight.w600,
-                letterSpacing: -0.8,
+            top: positive ? 36.7 : 33.4,
+            child: Transform.scale(
+              scaleX: 1.121,
+              scaleY: positive ? 1.1 : 1.08,
+              alignment: Alignment.centerRight,
+              child: Text(
+                amount,
+                style: TextStyle(
+                  color: positive
+                      ? const Color(0xFF1976D2)
+                      : const Color(0xFFEF4D4F),
+                  fontSize: 26,
+                  fontWeight: FontWeight.w400,
+                  letterSpacing: -0.8,
+                ),
               ),
             ),
           ),
           if (showBalance)
             Positioned(
               right: 0,
-              top: 75,
-              child: Text(
-                key: Key('account-transaction-balance-$transactionId'),
-                '잔액 $balance',
-                style: const TextStyle(
-                  color: _detailsMuted,
-                  fontSize: 18.5,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: -0.5,
+              top: positive ? 77.9 : 79,
+              child: Transform.scale(
+                scaleX: positive ? 1.176 : 1.12,
+                scaleY: 1.05,
+                alignment: Alignment.centerRight,
+                child: Text(
+                  key: Key('account-transaction-balance-$transactionId'),
+                  '잔액 $balance',
+                  style: const TextStyle(
+                    color: _detailsMuted,
+                    fontSize: 18.5,
+                    fontWeight: FontWeight.w400,
+                    letterSpacing: -0.5,
+                  ),
                 ),
               ),
             ),
           const Positioned(
             left: 0,
             right: 0,
-            bottom: 30,
+            bottom: 36,
             child: Divider(height: 1, thickness: 1, color: Color(0xFFE2E3E3)),
           ),
         ],

@@ -2,197 +2,151 @@ class BankCatalogEntry {
   const BankCatalogEntry({required this.code, required this.assetName});
 
   final String code;
-  final String assetName;
+  final String? assetName;
 }
 
 abstract final class BankCatalog {
-  static const _logoTileColors = <String, int>{
-    '신한': 0xFF075DDB,
-    '제주': 0xFF075DDB,
-    '국민': 0xFF4B4B50,
-    '기업': 0xFF087FC2,
-    '농협': 0xFF1768B2,
-    '산업': 0xFF315EA8,
-    '수협': 0xFF087DBB,
-    '신협': 0xFF185CB5,
-    '우리': 0xFF0874C9,
-    '하나': 0xFF008C82,
-    '한국씨티': 0xFF2876A5,
-    '카카오뱅크': 0xFFFEE500,
-    '케이뱅크': 0xFF160078,
-    '토스뱅크': 0xFF1269F3,
-    '경남': 0xFFE5233F,
-    '광주': 0xFF087DAF,
-    '아이엠뱅크(대구)': 0xFF00B8A9,
-    '부산': 0xFFE5233F,
-    '전북': 0xFF0877AE,
-    '회원수협': 0xFF087DBB,
-    '새마을': 0xFF49BEE4,
-    '우체국': 0xFFED3B31,
-    '저축은행': 0xFF20B55A,
-    '지역농·축협': 0xFF1768B2,
-    '도이치': 0xFF3029B4,
-    '중국': 0xFFC8112E,
-    '중국건설': 0xFF30478F,
-    '중국공상': 0xFFC90018,
-    'BNP파리바': 0xFF1BA66B,
-    'BOA': 0xFFE52335,
-    'HSBC': 0xFFE20A17,
-    'JP모간': 0xFF3159A5,
-    'SC': 0xFF087FC2,
-    '산림조합': 0xFF0A3B76,
-    '국세': 0xFFF4F6F8,
-    '지방세': 0xFFF4F6F8,
-    '국고': 0xFFF4F6F8,
-    '관세': 0xFFF4F6F8,
-    '신한투자증권': 0xFF075DDB,
-    '교보증권': 0xFF67AD3E,
-    '다올투자증권': 0xFF1A9FD0,
-    '대신증권': 0xFF8B8E8F,
-    '미래에셋증권': 0xFF06467B,
-    '삼성증권': 0xFF1242AD,
-    '상상인증권': 0xFF1768B2,
-    '신영증권': 0xFF557E3F,
-    '유안타증권': 0xFF087DC0,
-    '카카오페이증권': 0xFFFEE500,
-    '케이프투자증권': 0xFF1599CC,
-    '키움증권': 0xFFF4F6F8,
-    '토스증권': 0xFF1269F3,
-    '하나증권': 0xFF008C82,
-    '한국투자증권': 0xFF79370A,
-    '한화투자증권': 0xFFF26522,
-    '현대차증권': 0xFF0B4B93,
-    'DB금융투자': 0xFF1397CC,
-  };
-
-  static const _logoScales = <String, double>{
-    // Shinhan and Jeju use the same clean emblem. Keep their rendered
-    // diameter aligned with the other banks instead of scaling either source
-    // independently.
-    '신한': .94,
-    '제주': .94,
-    '국민': 1.41,
-    '기업': 1.82,
-    '농협': 1.85,
-    '산업': 1.53,
-    '수협': 1.32,
-    '신협': 1.46,
-    '우리': 1.78,
-    '하나': 1.41,
-    '한국씨티': 1.47,
-    '카카오뱅크': 1.04,
-    '케이뱅크': 1.75,
-    '토스뱅크': 1.71,
-    '경남': 1.61,
-    '광주': 1.56,
-    '아이엠뱅크(대구)': 1.38,
-    '부산': 1.61,
-    '전북': 1.56,
-    '회원수협': 1.51,
-    '새마을': 1.34,
-    '우체국': 1.16,
-    '저축은행': 1.56,
-    '지역농·축협': 1.46,
-    '도이치': 1.57,
-    '중국': 1.59,
-    '중국건설': 1.56,
-    '중국공상': 1.31,
-    'BNP파리바': 1.74,
-    'BOA': 1.81,
-    'HSBC': 1.62,
-    'JP모간': 1.42,
-    'SC': 1.62,
-    '산림조합': 1.32,
-    '국세': 1.74,
-    '지방세': 1.74,
-    '국고': 1.74,
-    '관세': 1.74,
-    '신한투자증권': 1.76,
-    '교보증권': 1.23,
-    '다올투자증권': 1.89,
-    '대신증권': 1.59,
-    '미래에셋증권': 1.51,
-    '삼성증권': 1.84,
-    '상상인증권': 1.53,
-    '신영증권': 1.61,
-    '유안타증권': 1.83,
-    '카카오페이증권': 1.76,
-    '케이프투자증권': 1.53,
-    '키움증권': 1.72,
-    '토스증권': 2.20,
-    '하나증권': 1.14,
-    '한국투자증권': 1.53,
-    '한화투자증권': 1.34,
-    '현대차증권': 1.68,
-    'DB금융투자': 1.71,
+  // The supplied PNGs share a 1254×1254 white canvas, but their colored
+  // rounded-square artwork has different bounds. These scales normalize the
+  // visible tile to roughly 82% of BankLogo's frame on every screen.
+  static const _logoScalesByAsset = <String, double>{
+    'logo_bank_of_america.png': 1.63,
+    'logo_bank_of_china.png': 1.40,
+    'logo_bnk.png': 1.79,
+    'logo_bnp_paribas.png': 1.44,
+    'logo_bookook_securities.png': 1.38,
+    'logo_cape_securities.png': 1.57,
+    'logo_china_construction_bank.png': 1.49,
+    'logo_citi.png': 1.80,
+    'logo_credit_union.png': 1.66,
+    'logo_daishin_securities.png': 1.49,
+    'logo_daol_securities.png': 1.38,
+    'logo_db_financial.png': 1.47,
+    'logo_deutsche_bank.png': 1.73,
+    'logo_eugene_securities.png': 1.60,
+    'logo_forestry_cooperative.png': 1.74,
+    'logo_gwangju_jeonbuk.png': 1.81,
+    'logo_hana.png': 1.35,
+    'logo_hanwha_securities.png': 1.44,
+    'logo_hsbc.png': 1.40,
+    'logo_hyundai_motor_securities.png': 1.75,
+    'logo_ibk.png': 1.54,
+    'logo_icbc.png': 1.40,
+    'logo_im.png': 1.46,
+    'logo_jpmorgan.png': 1.44,
+    'logo_kakao_bank.png': 1.44,
+    'logo_kakao_pay_securities.png': 1.58,
+    'logo_kb.png': 1.55,
+    'logo_kbank.png': 1.25,
+    'logo_kdb.png': 1.75,
+    'logo_kiwoom_securities.png': 1.77,
+    'logo_korea_investment_securities.png': 1.65,
+    'logo_kyobo_securities.png': 1.63,
+    'logo_ls_securities.png': 1.61,
+    'logo_meritz_securities.png': 1.59,
+    'logo_mirae_asset_securities.png': 1.43,
+    'logo_nh.png': 2.20,
+    'logo_saemaul.png': 1.65,
+    'logo_samsung_securities.png': 1.45,
+    'logo_sangsangin_securities.png': 1.33,
+    'logo_savings_bank.png': 1.53,
+    'logo_sc_first_bank.png': 1.48,
+    'logo_shinhan.png': 1.48,
+    'logo_shinyoung_securities.png': 1.59,
+    'logo_sk_securities.png': 1.57,
+    'logo_suhyup.png': 1.58,
+    'logo_toss.png': 1.52,
+    'logo_woori.png': 1.75,
+    'logo_yuanta_securities.png': 1.63,
   };
 
   static const bankEntries = <BankCatalogEntry>[
-    BankCatalogEntry(code: '신한', assetName: 'bank_shinhan_transparent.png'),
-    BankCatalogEntry(code: '제주', assetName: 'bank_shinhan_transparent.png'),
-    BankCatalogEntry(code: '국민', assetName: 'bank_kb_transparent.png'),
-    BankCatalogEntry(code: '기업', assetName: 'bank_ibk_transparent.png'),
-    BankCatalogEntry(code: '농협', assetName: 'bank_nh_transparent.png'),
-    BankCatalogEntry(code: '산업', assetName: 'bank_kdb_transparent.png'),
-    BankCatalogEntry(code: '수협', assetName: 'bank_suhyup_transparent.png'),
-    BankCatalogEntry(code: '신협', assetName: 'bank_shinhyup_transparent.png'),
-    BankCatalogEntry(code: '우리', assetName: 'bank_woori_transparent.png'),
-    BankCatalogEntry(code: '하나', assetName: 'bank_hana_transparent.png'),
-    BankCatalogEntry(code: '한국씨티', assetName: 'bank_citi_transparent.png'),
-    BankCatalogEntry(code: '카카오뱅크', assetName: 'bank_kakao_transparent.png'),
-    BankCatalogEntry(code: '케이뱅크', assetName: 'bank_kbank_transparent.png'),
-    BankCatalogEntry(code: '토스뱅크', assetName: 'security_toss.png'),
-    BankCatalogEntry(code: '경남', assetName: 'bank_kyongnam_transparent.png'),
-    BankCatalogEntry(code: '광주', assetName: 'bank_gwangju_transparent.png'),
-    BankCatalogEntry(code: '아이엠뱅크(대구)', assetName: 'bank_im_transparent.png'),
-    BankCatalogEntry(code: '부산', assetName: 'bank_busan_transparent.png'),
-    BankCatalogEntry(code: '전북', assetName: 'bank_jeonbuk_transparent.png'),
+    BankCatalogEntry(code: '신한', assetName: 'logo_shinhan.png'),
+    BankCatalogEntry(code: '제주', assetName: 'logo_shinhan.png'),
+    BankCatalogEntry(code: '국민', assetName: 'logo_kb.png'),
+    BankCatalogEntry(code: '기업', assetName: 'logo_ibk.png'),
+    BankCatalogEntry(code: '농협', assetName: 'logo_nh.png'),
+    BankCatalogEntry(code: '산업', assetName: 'logo_kdb.png'),
+    BankCatalogEntry(code: '수협', assetName: 'logo_suhyup.png'),
+    BankCatalogEntry(code: '신협', assetName: 'logo_credit_union.png'),
+    BankCatalogEntry(code: '우리', assetName: 'logo_woori.png'),
+    BankCatalogEntry(code: '하나', assetName: 'logo_hana.png'),
+    BankCatalogEntry(code: '한국씨티', assetName: 'logo_citi.png'),
+    BankCatalogEntry(code: '카카오뱅크', assetName: 'logo_kakao_bank.png'),
+    BankCatalogEntry(code: '케이뱅크', assetName: 'logo_kbank.png'),
+    BankCatalogEntry(code: '토스뱅크', assetName: 'logo_toss.png'),
+    BankCatalogEntry(code: '경남', assetName: 'logo_bnk.png'),
+    BankCatalogEntry(code: '광주', assetName: 'logo_gwangju_jeonbuk.png'),
+    BankCatalogEntry(code: '아이엠뱅크(대구)', assetName: 'logo_im.png'),
+    BankCatalogEntry(code: '부산', assetName: 'logo_bnk.png'),
+    BankCatalogEntry(code: '전북', assetName: 'logo_gwangju_jeonbuk.png'),
+    BankCatalogEntry(code: '회원수협', assetName: 'logo_suhyup.png'),
+    BankCatalogEntry(code: '새마을', assetName: 'logo_saemaul.png'),
+    BankCatalogEntry(code: '우체국', assetName: null),
+    BankCatalogEntry(code: '저축은행', assetName: 'logo_savings_bank.png'),
+    BankCatalogEntry(code: '지역농·축협', assetName: 'logo_nh.png'),
+    BankCatalogEntry(code: '도이치', assetName: 'logo_deutsche_bank.png'),
+    BankCatalogEntry(code: '중국', assetName: 'logo_bank_of_china.png'),
     BankCatalogEntry(
-      code: '회원수협',
-      assetName: 'bank_membersuhyup_transparent.png',
+      code: '중국건설',
+      assetName: 'logo_china_construction_bank.png',
     ),
-    BankCatalogEntry(code: '새마을', assetName: 'bank_saemaul_transparent.png'),
-    BankCatalogEntry(code: '우체국', assetName: 'bank_post_transparent.png'),
-    BankCatalogEntry(code: '저축은행', assetName: 'bank_savings_transparent.png'),
-    BankCatalogEntry(code: '지역농·축협', assetName: 'bank_localnh_transparent.png'),
-    BankCatalogEntry(code: '도이치', assetName: 'bank_deutsche_transparent.png'),
-    BankCatalogEntry(code: '중국', assetName: 'bank_china_transparent.png'),
-    BankCatalogEntry(code: '중국건설', assetName: 'bank_ccb_transparent.png'),
-    BankCatalogEntry(code: '중국공상', assetName: 'bank_icbc_transparent.png'),
-    BankCatalogEntry(code: 'BNP파리바', assetName: 'bank_bnp_transparent.png'),
-    BankCatalogEntry(code: 'BOA', assetName: 'bank_boa_transparent.png'),
-    BankCatalogEntry(code: 'HSBC', assetName: 'bank_hsbc_transparent.png'),
-    BankCatalogEntry(code: 'JP모간', assetName: 'bank_jpmorgan_transparent.png'),
-    BankCatalogEntry(code: 'SC', assetName: 'bank_sc_transparent.png'),
-    BankCatalogEntry(code: '산림조합', assetName: 'bank_forestry_transparent.png'),
-    BankCatalogEntry(code: '국세', assetName: 'bank_nationaltax_transparent.png'),
-    BankCatalogEntry(code: '지방세', assetName: 'bank_localtax_transparent.png'),
-    BankCatalogEntry(code: '국고', assetName: 'bank_treasury_transparent.png'),
-    BankCatalogEntry(code: '관세', assetName: 'bank_customs_transparent.png'),
+    BankCatalogEntry(code: '중국공상', assetName: 'logo_icbc.png'),
+    BankCatalogEntry(code: 'BNP파리바', assetName: 'logo_bnp_paribas.png'),
+    BankCatalogEntry(code: 'BOA', assetName: 'logo_bank_of_america.png'),
+    BankCatalogEntry(code: 'HSBC', assetName: 'logo_hsbc.png'),
+    BankCatalogEntry(code: 'JP모간', assetName: 'logo_jpmorgan.png'),
+    BankCatalogEntry(code: 'SC', assetName: 'logo_sc_first_bank.png'),
+    BankCatalogEntry(code: '산림조합', assetName: 'logo_forestry_cooperative.png'),
+    BankCatalogEntry(code: '국세', assetName: null),
+    BankCatalogEntry(code: '지방세', assetName: null),
+    BankCatalogEntry(code: '국고', assetName: null),
+    BankCatalogEntry(code: '관세', assetName: null),
   ];
 
   static const securitiesEntries = <BankCatalogEntry>[
-    BankCatalogEntry(code: '신한투자증권', assetName: 'security_shinhan.png'),
-    BankCatalogEntry(code: '교보증권', assetName: 'security_kyobo.png'),
-    BankCatalogEntry(code: '다올투자증권', assetName: 'security_daol.png'),
-    BankCatalogEntry(code: '대신증권', assetName: 'security_daishin.png'),
-    BankCatalogEntry(code: '미래에셋증권', assetName: 'security_mirae_asset.png'),
-    BankCatalogEntry(code: '삼성증권', assetName: 'security_samsung.png'),
-    BankCatalogEntry(code: '상상인증권', assetName: 'security_sangsangin.png'),
-    BankCatalogEntry(code: '신영증권', assetName: 'security_shinyoung.png'),
-    BankCatalogEntry(code: '유안타증권', assetName: 'security_yuanta.png'),
-    BankCatalogEntry(code: '카카오페이증권', assetName: 'security_kakao_pay.png'),
-    BankCatalogEntry(code: '케이프투자증권', assetName: 'security_cape.png'),
-    BankCatalogEntry(code: '키움증권', assetName: 'security_kiwoom.png'),
-    BankCatalogEntry(code: '토스증권', assetName: 'security_toss.png'),
-    BankCatalogEntry(code: '하나증권', assetName: 'security_hana.png'),
+    BankCatalogEntry(code: 'NH투자증권', assetName: 'logo_nh.png'),
+    BankCatalogEntry(code: '교보증권', assetName: 'logo_kyobo_securities.png'),
+    BankCatalogEntry(code: '다올투자증권', assetName: 'logo_daol_securities.png'),
+    BankCatalogEntry(code: '대신증권', assetName: 'logo_daishin_securities.png'),
+    BankCatalogEntry(code: '메리츠증권', assetName: 'logo_meritz_securities.png'),
+    BankCatalogEntry(
+      code: '미래에셋증권',
+      assetName: 'logo_mirae_asset_securities.png',
+    ),
+    BankCatalogEntry(code: '부국증권', assetName: 'logo_bookook_securities.png'),
+    BankCatalogEntry(code: '삼성증권', assetName: 'logo_samsung_securities.png'),
+    BankCatalogEntry(
+      code: '상상인증권',
+      assetName: 'logo_sangsangin_securities.png',
+    ),
+    BankCatalogEntry(code: '신영증권', assetName: 'logo_shinyoung_securities.png'),
+    BankCatalogEntry(code: '신한투자증권', assetName: 'logo_shinhan.png'),
+    BankCatalogEntry(code: '에스케이증권', assetName: 'logo_sk_securities.png'),
+    BankCatalogEntry(code: '유안타증권', assetName: 'logo_yuanta_securities.png'),
+    BankCatalogEntry(code: '유진투자증권', assetName: 'logo_eugene_securities.png'),
+    BankCatalogEntry(code: 'LS증권', assetName: 'logo_ls_securities.png'),
+    BankCatalogEntry(
+      code: '카카오페이증권',
+      assetName: 'logo_kakao_pay_securities.png',
+    ),
+    BankCatalogEntry(code: '케이프투자증권', assetName: 'logo_cape_securities.png'),
+    BankCatalogEntry(code: '키움증권', assetName: 'logo_kiwoom_securities.png'),
+    BankCatalogEntry(code: '토스증권', assetName: 'logo_toss.png'),
+    BankCatalogEntry(code: '하나증권', assetName: 'logo_hana.png'),
+    BankCatalogEntry(code: '아이엠증권', assetName: 'logo_im.png'),
     BankCatalogEntry(
       code: '한국투자증권',
-      assetName: 'security_korea_investment.png',
+      assetName: 'logo_korea_investment_securities.png',
     ),
-    BankCatalogEntry(code: '한화투자증권', assetName: 'security_hanwha.png'),
-    BankCatalogEntry(code: '현대차증권', assetName: 'security_hyundai_motor.png'),
-    BankCatalogEntry(code: 'DB금융투자', assetName: 'security_db_financial.png'),
+    BankCatalogEntry(code: '한화투자증권', assetName: 'logo_hanwha_securities.png'),
+    BankCatalogEntry(
+      code: '현대차증권',
+      assetName: 'logo_hyundai_motor_securities.png',
+    ),
+    BankCatalogEntry(code: '우리투자증권', assetName: 'logo_woori.png'),
+    BankCatalogEntry(code: 'BNK증권', assetName: 'logo_bnk.png'),
+    BankCatalogEntry(code: 'DB금융투자', assetName: 'logo_db_financial.png'),
   ];
 
   static const entries = <BankCatalogEntry>[
@@ -209,9 +163,19 @@ abstract final class BankCatalog {
   static List<String> get codes =>
       List.unmodifiable(entries.map((entry) => entry.code));
 
+  static List<String> get logoAssets => List.unmodifiable(
+    entries
+        .map((entry) => entry.assetName)
+        .whereType<String>()
+        .map((assetName) => 'assets/images/$assetName')
+        .toSet(),
+  );
+
   static String? tryLogoAsset(String code) {
     for (final entry in entries) {
-      if (entry.code == code) return 'assets/images/${entry.assetName}';
+      if (entry.code != code) continue;
+      final assetName = entry.assetName;
+      return assetName == null ? null : 'assets/images/$assetName';
     }
     return null;
   }
@@ -219,16 +183,12 @@ abstract final class BankCatalog {
   static String logoAsset(String code) {
     final asset = tryLogoAsset(code);
     if (asset != null) return asset;
-    throw ArgumentError.value(code, 'code', 'Ngân hàng chưa có logo');
+    throw ArgumentError.value(code, 'code', 'Ngân hàng chưa có logo ảnh');
   }
 
-  static double logoScale(String code) => _logoScales[code] ?? 1;
-
-  static int logoTileColor(String code) {
-    final color = _logoTileColors[code];
-    if (color != null) return color;
-    throw ArgumentError.value(code, 'code', 'Ngân hàng chưa có màu nền logo');
+  static double logoScale(String code) {
+    final asset = tryLogoAsset(code);
+    if (asset == null) return 1;
+    return _logoScalesByAsset[asset.split('/').last] ?? 1;
   }
-
-  static bool usesWhiteLogo(String code) => code == '토스뱅크' || code == '토스증권';
 }

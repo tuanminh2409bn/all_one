@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -10,6 +12,7 @@ import 'data_management_screen.dart';
 import 'design_canvas.dart' show showDeviceStatusBar;
 import 'limit_release_screen.dart';
 import 'native_home_view.dart';
+import 'transfer_loading_overlay.dart';
 import 'transfer_recipient_screen.dart';
 
 const _loginLabel = '로그인';
@@ -38,6 +41,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _hideAmounts = false;
   bool _largeText = false;
   bool _nhTab = true;
+  int _transferLoadingPlaybackId = 0;
   final _benefitsKey = GlobalKey();
   final _assetsKey = GlobalKey();
 
@@ -157,7 +161,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             signedIn ? '${widget.auth.displayName} 님' : '로그인',
                             style: const TextStyle(
                               fontSize: 23,
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w700,
                               letterSpacing: -0.6,
                             ),
                           ),
@@ -248,14 +252,53 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _openTransfer() async {
-    final result = await Navigator.of(context).push<TransferFlowResult>(
-      MaterialPageRoute<TransferFlowResult>(
-        builder: (_) => TransferRecipientScreen(
-          dataStore: widget.dataStore,
-          auth: widget.auth,
-        ),
+    await const AssetImage('assets/images/loading_original.png').evict();
+    if (!mounted) return;
+
+    final loadingDone = Completer<void>();
+    final routeResult = Completer<TransferFlowResult?>();
+    final playbackId = ++_transferLoadingPlaybackId;
+    var routeOpened = false;
+    late final OverlayEntry loadingEntry;
+
+    void openRecipient() {
+      if (routeOpened || !mounted) return;
+      routeOpened = true;
+      unawaited(
+        Navigator.of(context)
+            .push<TransferFlowResult>(
+              PageRouteBuilder<TransferFlowResult>(
+                transitionDuration: Duration.zero,
+                reverseTransitionDuration: Duration.zero,
+                pageBuilder: (_, __, ___) => TransferRecipientScreen(
+                  dataStore: widget.dataStore,
+                  auth: widget.auth,
+                ),
+              ),
+            )
+            .then((result) {
+              if (!routeResult.isCompleted) routeResult.complete(result);
+            }),
+      );
+    }
+
+    loadingEntry = OverlayEntry(
+      builder: (_) => TransferLoadingOverlay(
+        key: const Key('transfer-loading-homeToRecipient'),
+        playbackKey: playbackId,
+        duration: transferHomeToRecipientLoadingDuration,
+        scrimDelay: transferHomeToRecipientScreenSwitchDelay,
+        onScrimShown: openRecipient,
+        onComplete: () {
+          loadingEntry.remove();
+          if (!loadingDone.isCompleted) loadingDone.complete();
+        },
       ),
     );
+    Overlay.of(context, rootOverlay: true).insert(loadingEntry);
+    await loadingDone.future;
+    if (!routeOpened) openRecipient();
+    final result = await routeResult.future;
     if (!mounted) return;
     showDeviceStatusBar(darkIcons: true, backgroundColor: Colors.white);
     if (result == TransferFlowResult.failed) {

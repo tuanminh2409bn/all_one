@@ -37,5 +37,12 @@ void main() {
       tester.getBottomRight(find.byKey(const Key('add-recipient'))).dy,
       lessThanOrEqualTo(safeBottom),
     );
+
+    await tester.tap(find.byKey(const Key('add-recipient')));
+    await tester.pumpAndSettle();
+    final warningToggle = tester.widget<SwitchListTile>(
+      find.byKey(const Key('recipient-transfer-warning-toggle')),
+    );
+    expect(warningToggle.value, isTrue);
   });
 }

@@ -115,12 +115,35 @@ void main() {
         bankCode: '하나',
         accountNumber: '123456789',
       );
-      await store.saveRecipient(recipient.copyWith(displayName: '수정된 이름'));
+      expect(recipient.showTransferWarning, isTrue);
+      await store.saveRecipient(
+        recipient.copyWith(displayName: '수정된 이름', showTransferWarning: false),
+      );
       expect(
         store.recipients
             .singleWhere((item) => item.id == recipient.id)
             .displayName,
         '수정된 이름',
+      );
+      expect(
+        store.recipients
+            .singleWhere((item) => item.id == recipient.id)
+            .showTransferWarning,
+        isFalse,
+      );
+      expect(
+        SavedRecipient.fromJson(recipient.toJson()).showTransferWarning,
+        isTrue,
+      );
+      expect(
+        SavedRecipient.fromJson(<String, Object?>{
+          'id': 'legacy',
+          'displayName': 'LEGACY',
+          'bankCode': '신한',
+          'accountNumber': '123456',
+          'favorite': false,
+        }).showTransferWarning,
+        isTrue,
       );
       await store.deleteRecipient(recipient.id);
       expect(

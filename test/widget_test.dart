@@ -7,6 +7,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:all_one/core/app_data.dart';
 import 'package:all_one/core/auth_service.dart';
+import 'package:all_one/core/bank_catalog.dart';
+import 'package:all_one/core/pin_security.dart';
 import 'package:all_one/ui/account_details_screen.dart';
 import 'package:all_one/ui/app_loading_transition.dart';
 import 'package:all_one/ui/bank_logo.dart';
@@ -15,6 +17,7 @@ import 'package:all_one/ui/home_screen.dart';
 import 'package:all_one/ui/limit_release_screen.dart';
 import 'package:all_one/ui/pin_screen.dart';
 import 'package:all_one/ui/splash_screen.dart';
+import 'package:all_one/ui/transfer_loading_overlay.dart';
 import 'package:all_one/ui/transfer_recipient_screen.dart';
 
 void main() {
@@ -24,7 +27,9 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  testWidgets('bank logos use opaque rounded-square tiles', (tester) async {
+  testWidgets('bank logos use the new rounded-square image assets', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       const MaterialApp(
         home: Scaffold(body: BankLogo(bankCode: '신한', size: 50)),
@@ -34,13 +39,12 @@ void main() {
     final frame = tester.widget<ClipRRect>(
       find.byKey(const Key('bank-logo-frame-신한')),
     );
-    final tile = tester.widget<ColoredBox>(
-      find.byKey(const Key('bank-logo-tile-신한')),
-    );
+    final image = tester.widget<Image>(find.byType(Image));
     final radius = frame.borderRadius as BorderRadius;
     expect(radius.topLeft.x, closeTo(14, .001));
     expect(radius.topLeft.y, closeTo(14, .001));
-    expect(tile.color.a, 1);
+    expect(image.image, isA<ResizeImage>());
+    expect(BankCatalog.logoAsset('신한'), endsWith('logo_shinhan.png'));
     expect(tester.getSize(find.byType(BankLogo)), const Size.square(50));
   });
 
@@ -430,7 +434,10 @@ void main() {
     expect(find.text('NH올원모임통장'), findsOneWidget);
     expect(find.text('계좌관리'), findsOneWidget);
     expect(find.text('이체'), findsOneWidget);
-    expect(find.text('뚜레쥬르'), findsOneWidget);
+    expect(
+      find.byKey(const Key('account-transaction-promotion')),
+      findsOneWidget,
+    );
     expect(find.text('1개월 · 전체 · 최신순'), findsOneWidget);
     expect(find.text('거래내역이 없습니다.'), findsOneWidget);
 
@@ -463,6 +470,67 @@ void main() {
     await tester.tap(find.byKey(const Key('account-back')));
     await tester.pumpAndSettle();
     expect(find.byType(HomeScreen), findsOneWidget);
+  });
+
+  testWidgets('transaction history filter matches the reference flow', (
+    tester,
+  ) async {
+    _configureMockupViewport(tester);
+    await tester.pumpWidget(
+      _TestHost(
+        home: AccountDetailsScreen(
+          auth: AuthService(),
+          dataStore: AppDataStore.inMemory(withMockData: false),
+          nowProvider: () => DateTime(2026, 9, 18, 11, 40),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('account-history-filter')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('조회 조건을 선택해 주세요'), findsOneWidget);
+    expect(find.text('조회 기간'), findsOneWidget);
+    expect(find.text('1주일'), findsOneWidget);
+    expect(find.text('1개월'), findsOneWidget);
+    expect(find.text('3개월'), findsOneWidget);
+    expect(find.text('6개월'), findsOneWidget);
+    expect(find.text('월별'), findsOneWidget);
+    expect(find.text('기간선택'), findsOneWidget);
+    expect(find.text('정렬 순서'), findsOneWidget);
+    expect(find.text('조회 구분'), findsOneWidget);
+    expect(find.text('신한 ATM'), findsNothing);
+    expect(find.byKey(const Key('history-filter-apply')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('history-range-week')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('history-start-date')), findsOneWidget);
+    expect(find.byKey(const Key('history-end-date')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('history-period-monthly')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('history-month-field')));
+    await tester.pumpAndSettle();
+    expect(find.text('연/월을 선택해 주세요'), findsOneWidget);
+    expect(find.byKey(const Key('history-year-wheel')), findsOneWidget);
+    expect(find.byKey(const Key('history-month-wheel')), findsOneWidget);
+    expect(find.byKey(const Key('history-month-picker-apply')), findsOneWidget);
+
+    await tester.drag(
+      find.byKey(const Key('history-month-wheel')),
+      const Offset(0, -240),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('history-month-picker-apply')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('history-filter-apply')));
+    await tester.pumpAndSettle();
+    expect(find.text('조회시작날짜는 오늘날짜이거나 과거날짜이어야합니다.'), findsOneWidget);
+    expect(
+      find.byKey(const Key('history-filter-validation-confirm')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('third account action opens recipient and institution picker', (
@@ -503,7 +571,22 @@ void main() {
     expect(accountInput.decoration?.constraints?.minHeight, 79);
     expect(accountInput.decoration?.constraints?.maxHeight, 79);
     final bankPlaceholder = tester.widget<Text>(find.text('은행을 선택해 주세요'));
-    expect(bankPlaceholder.style?.fontWeight, FontWeight.w700);
+    expect(bankPlaceholder.style?.fontWeight, FontWeight.w500);
+
+    await tester.tap(find.byKey(const Key('transfer-recipient-tab-자주')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('transfer-favorite-category')), findsOneWidget);
+    expect(find.byKey(const Key('transfer-favorite-search')), findsOneWidget);
+    expect(
+      find.byKey(const Key('transfer-favorite-search-icon')),
+      findsOneWidget,
+    );
+    expect(find.text('자주쓰는 계좌/연락처 등록'), findsOneWidget);
+    expect(find.text('NH스마트뱅킹에서 정보를 가져올 수 있어요.'), findsOneWidget);
+    expect(find.text('등록된 계좌가 없습니다.'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('transfer-favorite-hint-close')));
+    await tester.pumpAndSettle();
+    expect(find.text('NH스마트뱅킹에서 정보를 가져올 수 있어요.'), findsNothing);
 
     await tester.tap(find.byKey(const Key('transfer-bank-selector')));
     await tester.pumpAndSettle();
@@ -551,10 +634,123 @@ void main() {
     expect(find.byType(HomeScreen), findsOneWidget);
   });
 
-  testWidgets('transfer flow uses green and respects Android navigation', (
+  testWidgets(
+    'recipient entry matches selected-bank validation and favorite states',
+    (tester) async {
+      _configureMockupViewport(tester);
+      final store = AppDataStore.inMemory(withMockData: false);
+      addTearDown(store.dispose);
+      await store.createAccount(
+        bankCode: '농협',
+        bankDisplayName: 'NH농협은행',
+        ownerName: 'BUI PHUONG',
+        accountNumber: '3022180437191',
+        accountType: 'NH올원모임통장',
+        openingBalance: 20000,
+      );
+      final recipient = await store.createRecipient(
+        displayName: 'TRINHTRUNG',
+        bankCode: '신한',
+        accountNumber: '110628103680',
+      );
+      await store.saveRecipient(recipient.copyWith(favorite: true));
+
+      await tester.pumpWidget(
+        _TestHost(home: TransferRecipientScreen(dataStore: store)),
+      );
+      await tester.pumpAndSettle();
+
+      FilledButton nextButton() =>
+          tester.widget<FilledButton>(find.byKey(const Key('transfer-next')));
+
+      expect(nextButton().onPressed, isNull);
+      expect(find.byKey(const Key('favorite-star-selected')), findsOneWidget);
+      expect(find.text('신한은행 110628103680'), findsOneWidget);
+      final recipientBankAccount = tester.widget<Text>(
+        find.byKey(const Key('recipient-bank-account')),
+      );
+      expect(recipientBankAccount.style?.fontSize, 20);
+      expect(recipientBankAccount.style?.fontWeight, FontWeight.w400);
+      expect(recipientBankAccount.style?.color, const Color(0xFF999999));
+      expect(
+        tester
+            .widget<BankLogo>(find.byKey(const Key('recipient-bank-logo')))
+            .size,
+        62,
+      );
+      expect(
+        find.byKey(const Key('transfer-recipient-manage-link')),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.byKey(const Key('transfer-bank-selector')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('NH농협'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('transfer-selected-bank-logo')),
+        findsOneWidget,
+      );
+      expect(
+        tester
+            .widget<BankLogo>(
+              find.byKey(const Key('transfer-selected-bank-logo')),
+            )
+            .size,
+        46,
+      );
+      final selectedBankLabel = tester.widget<Text>(
+        find.byKey(const Key('transfer-selected-bank-label')),
+      );
+      expect(selectedBankLabel.style?.fontWeight, FontWeight.w500);
+      expect(find.text('계좌번호를 입력하면 은행을 조회해 드릴게요'), findsNothing);
+      expect(find.text('NH농협'), findsOneWidget);
+      expect(nextButton().onPressed, isNull);
+      expect(tester.getTopLeft(find.byKey(const Key('transfer-next'))).dy, 497);
+
+      await tester.enterText(
+        find.byKey(const Key('transfer-account-input')),
+        '12345',
+      );
+      await tester.pump();
+      expect(nextButton().onPressed, isNull);
+
+      await tester.enterText(
+        find.byKey(const Key('transfer-account-input')),
+        '123456',
+      );
+      await tester.pump();
+      expect(nextButton().onPressed, isNotNull);
+      expect(
+        nextButton().style?.backgroundColor?.resolve(<WidgetState>{}),
+        const Color(0xFF1F9A3F),
+      );
+      final nextLabel = tester.widget<Text>(find.text('다음'));
+      expect(nextLabel.style?.color, Colors.white);
+
+      await tester.enterText(
+        find.byKey(const Key('transfer-account-input')),
+        '123456789012345678901',
+      );
+      await tester.pump();
+      final accountInput = tester.widget<TextField>(
+        find.byKey(const Key('transfer-account-input')),
+      );
+      expect(accountInput.controller?.text, '12345678901234567890');
+      expect(nextButton().onPressed, isNotNull);
+
+      await tester.tap(find.byKey(Key('recipient-favorite-${recipient.id}')));
+      await tester.pumpAndSettle();
+      expect(store.recipients.single.favorite, isFalse);
+      expect(find.byKey(const Key('favorite-star-idle')), findsOneWidget);
+    },
+  );
+
+  testWidgets('saved recipient amount and PIN popup match the reference flow', (
     tester,
   ) async {
-    const appGreen = Color(0xFF159757);
+    const recipientGreen = Color(0xFF1F9A3F);
     _configureMockupViewport(tester);
     tester.view.padding = const FakeViewPadding(bottom: 68);
     tester.view.viewPadding = const FakeViewPadding(bottom: 68);
@@ -564,12 +760,17 @@ void main() {
     final store = AppDataStore.inMemory(withMockData: false);
     addTearDown(store.dispose);
     await store.createAccount(
-      bankCode: '신한',
-      bankDisplayName: '저축예금',
+      bankCode: '농협',
+      bankDisplayName: 'NH농협은행',
       ownerName: 'BUI PHUONG',
       accountNumber: '3022180437191',
-      accountType: '저축예금',
+      accountType: 'NH올원모임통장',
       openingBalance: 20000,
+    );
+    await store.createRecipient(
+      displayName: 'TRINHTRUNG',
+      bankCode: '신한',
+      accountNumber: '110628103680',
     );
 
     await tester.pumpWidget(
@@ -577,43 +778,41 @@ void main() {
         home: TransferRecipientScreen(
           dataStore: store,
           initialPinKeys: const [
+            '1',
             '2',
             '3',
-            '6',
-            '8',
-            '0',
-            '9',
             '4',
-            '7',
-            '1',
             '5',
+            '6',
+            '7',
+            '8',
+            '9',
+            '0',
           ],
         ),
       ),
     );
     await tester.pumpAndSettle();
 
-    await tester.enterText(
-      find.byKey(const Key('transfer-account-input')),
-      '100237698805',
-    );
-    await tester.tap(find.byKey(const Key('transfer-bank-selector')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('bank-농협')));
+    await tester.tap(find.byKey(const Key('recipient-TRINHTRUNG')));
     await tester.pumpAndSettle();
 
     FilledButton nextButton() =>
         tester.widget<FilledButton>(find.byKey(const Key('transfer-next')));
-    expect(
-      nextButton().style?.backgroundColor?.resolve(<WidgetState>{}),
-      appGreen,
-    );
-
-    await tester.tap(find.byKey(const Key('transfer-next')));
-    await tester.pumpAndSettle();
 
     const safeBottom = 1280 - 68;
+    expect(find.text('TRINHTRUNG'), findsOneWidget);
+    expect(find.text('신한은행 110628103680'), findsOneWidget);
     expect(find.text('얼마를 보낼까요?'), findsOneWidget);
+    expect(find.text('NH농협은행(7191)'), findsOneWidget);
+    expect(find.text('0원'), findsOneWidget);
+    expect(nextButton().onPressed, isNull);
+    expect(
+      nextButton().style?.backgroundColor?.resolve(<WidgetState>{
+        WidgetState.disabled,
+      }),
+      const Color(0xFFE9E9E9),
+    );
     expect(
       tester.getBottomRight(find.byKey(const Key('transfer-next'))).dy,
       lessThanOrEqualTo(safeBottom),
@@ -629,62 +828,467 @@ void main() {
         matching: find.text('1'),
       ),
     );
-    expect(oneLabel.style?.fontWeight, FontWeight.w500);
+    expect(oneLabel.style?.fontWeight, FontWeight.w700);
 
-    await tester.tap(find.byKey(const Key('amount-key-2')));
-    await tester.pump();
-    await tester.tap(find.byKey(const Key('transfer-next')));
-    await tester.pumpAndSettle();
-
-    expect(find.textContaining('보낼까요?'), findsOneWidget);
+    for (final digit in ['5', '0', '0', '0']) {
+      await tester.tap(find.byKey(Key('amount-key-$digit')));
+      await tester.pump();
+    }
     expect(
-      tester.getBottomRight(find.byKey(const Key('transfer-next'))).dy,
-      lessThanOrEqualTo(safeBottom),
+      tester.widget<Text>(find.byKey(const Key('amount-display'))).data,
+      '5,000원',
     );
+    expect(nextButton().onPressed, isNotNull);
     expect(
       nextButton().style?.backgroundColor?.resolve(<WidgetState>{}),
-      appGreen,
+      recipientGreen,
     );
 
     await tester.tap(find.byKey(const Key('transfer-next')));
     await tester.pumpAndSettle();
 
-    expect(
-      tester
-          .widget<ColoredBox>(
-            find.byKey(const Key('transfer-pin-keypad-background')),
-          )
-          .color,
-      appGreen,
-    );
+    expect(find.byKey(const Key('transfer-pin-sheet')), findsOneWidget);
+    expect(find.byKey(const Key('transfer-pin-dim-layer')), findsOneWidget);
+    expect(find.text('계좌 비밀번호 입력'), findsOneWidget);
+    expect(find.text('NH농협은행 302-2180-4371-91'), findsOneWidget);
+    expect(find.byKey(const Key('transfer-pin-symbol-left')), findsOneWidget);
+    expect(find.byKey(const Key('transfer-pin-symbol-right')), findsOneWidget);
     final pinTwoLabel = tester.widget<Text>(
       find.descendant(
         of: find.byKey(const Key('transfer-pin-key-2')),
         matching: find.text('2'),
       ),
     );
-    expect(pinTwoLabel.style?.fontWeight, FontWeight.w700);
+    expect(pinTwoLabel.style?.fontWeight, FontWeight.w400);
 
-    await tester.tap(find.byKey(const Key('transfer-pin-key-2')));
-    await tester.pump();
-    final firstIndicator = tester.widget<Container>(
-      find.byKey(const Key('transfer-pin-indicator-0')),
+    final rearrangeCenter = tester.getCenter(
+      find.byKey(const Key('transfer-pin-rearrange')),
     );
-    expect((firstIndicator.decoration as BoxDecoration).color, appGreen);
+    final deleteCenter = tester.getCenter(
+      find.byKey(const Key('transfer-pin-delete')),
+    );
+    final okCenter = tester.getCenter(find.byKey(const Key('transfer-pin-ok')));
+    expect(rearrangeCenter.dx, closeTo(116, 0.1));
+    expect(deleteCenter.dx, closeTo(294, 0.1));
+    expect(okCenter.dx, closeTo(472, 0.1));
+    expect(deleteCenter.dx - rearrangeCenter.dx, closeTo(178, 0.1));
+    expect(okCenter.dx - deleteCenter.dx, closeTo(178, 0.1));
+    expect(rearrangeCenter.dy, closeTo(deleteCenter.dy, 0.1));
+    expect(deleteCenter.dy, closeTo(okCenter.dy, 0.1));
+    expect(rearrangeCenter.dy, closeTo(1174, 0.1));
+    expect(
+      (tester
+                  .widget<Image>(
+                    find.byKey(const Key('transfer-pin-rearrange-artwork')),
+                  )
+                  .image
+              as AssetImage)
+          .assetName,
+      'assets/images/ref_transfer_pin_rearrange.png',
+    );
+    expect(
+      (tester
+                  .widget<Image>(
+                    find.byKey(const Key('transfer-pin-delete-artwork')),
+                  )
+                  .image
+              as AssetImage)
+          .assetName,
+      'assets/images/ref_transfer_pin_delete.png',
+    );
 
-    for (final digit in ['3', '6', '8']) {
+    final randomizableKeys = <Key>[
+      for (final digit in List<String>.generate(10, (index) => '$index'))
+        Key('transfer-pin-key-$digit'),
+      const Key('transfer-pin-symbol-left'),
+      const Key('transfer-pin-symbol-right'),
+    ];
+    final beforeRearrange = <Key, Offset>{
+      for (final key in randomizableKeys)
+        key: tester.getCenter(find.byKey(key)),
+    };
+    await tester.tap(find.byKey(const Key('transfer-pin-rearrange')));
+    await tester.pump();
+    final afterRearrange = <Key, Offset>{
+      for (final key in randomizableKeys)
+        key: tester.getCenter(find.byKey(key)),
+    };
+    expect(
+      beforeRearrange.entries.every(
+        (entry) => afterRearrange[entry.key] != entry.value,
+      ),
+      isTrue,
+    );
+
+    for (final digit in ['1', '2', '3', '4']) {
       await tester.tap(find.byKey(Key('transfer-pin-key-$digit')));
       await tester.pump();
     }
     await tester.pumpAndSettle();
 
-    final failureButton = tester.widget<FilledButton>(
-      find.byKey(const Key('transfer-failure-home-confirm')),
+    String mismatchMessage() => tester
+        .widget<RichText>(
+          find.byKey(const Key('transfer-pin-mismatch-message')),
+        )
+        .text
+        .toPlainText();
+
+    expect(
+      find.byKey(const Key('transfer-pin-mismatch-popup')),
+      findsOneWidget,
+    );
+    expect(mismatchMessage(), contains('1회'));
+    expect(mismatchMessage(), contains('연속\n5회 오류'));
+
+    await tester.tap(find.byKey(const Key('transfer-pin-mismatch-confirm')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('transfer-pin-sheet')), findsOneWidget);
+
+    for (final digit in ['1', '2', '3', '4']) {
+      await tester.tap(find.byKey(Key('transfer-pin-key-$digit')));
+      await tester.pump();
+    }
+    await tester.pumpAndSettle();
+    expect(mismatchMessage(), contains('2회'));
+  });
+
+  testWidgets(
+    'saved recipient warning setting controls the correct-PIN destination',
+    (tester) async {
+      _configureMockupViewport(tester);
+      final auth = _VerifiedTransferAuth();
+
+      final store = AppDataStore.inMemory(withMockData: false);
+      addTearDown(store.dispose);
+      await store.createAccount(
+        bankCode: '농협',
+        bankDisplayName: 'NH농협은행',
+        ownerName: 'BUI PHUONG THANH',
+        accountNumber: '3022180437191',
+        accountType: 'NH올원모임통장',
+        openingBalance: 20000,
+      );
+      final recipient = await store.createRecipient(
+        displayName: 'TRINHTRUNG',
+        bankCode: '신한',
+        accountNumber: '110628103680',
+        showTransferWarning: true,
+      );
+
+      Future<void> reachCorrectPin({required Key screenKey}) async {
+        await tester.pumpWidget(
+          _TestHost(
+            home: TransferRecipientScreen(
+              key: screenKey,
+              dataStore: store,
+              auth: auth,
+              initialPinKeys: const [
+                '1',
+                '2',
+                '3',
+                '4',
+                '5',
+                '6',
+                '7',
+                '8',
+                '9',
+                '0',
+              ],
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('recipient-TRINHTRUNG')));
+        await tester.pumpAndSettle();
+        for (final digit in ['5', '0', '0', '0']) {
+          await tester.tap(find.byKey(Key('amount-key-$digit')));
+          await tester.pump();
+        }
+        await tester.tap(find.byKey(const Key('transfer-next')));
+        await tester.pumpAndSettle();
+        for (final digit in ['1', '2', '3', '4']) {
+          await tester.tap(find.byKey(Key('transfer-pin-key-$digit')));
+          await tester.pump();
+        }
+        await tester.pumpAndSettle();
+        await tester.pump();
+        await tester.pumpAndSettle();
+      }
+
+      await reachCorrectPin(screenKey: const ValueKey('warning-on'));
+      expect(find.byKey(const Key('transfer-warning-popup')), findsOneWidget);
+      expect(
+        tester.getSize(find.byKey(const Key('transfer-warning-cancel'))),
+        const Size(217, 69),
+      );
+      expect(
+        tester.getTopLeft(find.byKey(const Key('transfer-warning-cancel'))).dy,
+        closeTo(713.5, 0.1),
+      );
+      expect(
+        tester
+            .widget<Text>(find.byKey(const Key('amount-source-card-value')))
+            .style
+            ?.fontWeight,
+        FontWeight.w400,
+      );
+      expect(
+        tester
+            .widget<Text>(find.byKey(const Key('transfer-warning-message')))
+            .data,
+        contains('TRINHTRUNG님에게 이체하시겠어요?'),
+      );
+      await tester.tap(find.byKey(const Key('transfer-warning-confirm')));
+      await tester.pumpAndSettle();
+      expect(find.text('이체확인'), findsOneWidget);
+      expect(find.byKey(const Key('transfer-review-confirm')), findsOneWidget);
+      expect(
+        tester.getSize(find.byKey(const Key('transfer-review-add'))),
+        const Size(172, 81),
+      );
+      expect(
+        tester.getSize(find.byKey(const Key('transfer-review-confirm'))),
+        const Size(332, 81),
+      );
+      expect(
+        tester
+            .widget<RichText>(find.byKey(const Key('transfer-review-title')))
+            .text
+            .toPlainText(),
+        'TRINHTRUNG...님께 5,000원을\n이체할까요?',
+      );
+      expect(find.text('BUIPHUONGT'), findsOneWidget);
+
+      await store.saveRecipient(recipient.copyWith(showTransferWarning: false));
+      await reachCorrectPin(screenKey: const ValueKey('warning-off'));
+      expect(find.byKey(const Key('transfer-warning-popup')), findsNothing);
+      expect(find.text('이체확인'), findsOneWidget);
+      expect(find.byKey(const Key('transfer-review-confirm')), findsOneWidget);
+    },
+  );
+
+  testWidgets('four transfer Loading 2 transitions match the source video', (
+    tester,
+  ) async {
+    _configureMockupViewport(tester);
+    final auth = _VerifiedTransferAuth();
+    final store = AppDataStore.inMemory(withMockData: false);
+    addTearDown(store.dispose);
+    await store.createAccount(
+      bankCode: '농협',
+      bankDisplayName: 'NH농협은행',
+      ownerName: 'BUI PHUONG THANH',
+      accountNumber: '3022180437191',
+      accountType: 'NH올원모임통장',
+      openingBalance: 20000,
+    );
+    await store.createRecipient(
+      displayName: 'TRINHTRUNG',
+      bankCode: '신한',
+      accountNumber: '110628103680',
+      showTransferWarning: true,
+    );
+
+    await tester.pumpWidget(
+      _TestHost(
+        home: HomeScreen(auth: auth, dataStore: store),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    Future<void> pumpUntilLoading(Key key) async {
+      for (var attempt = 0; attempt < 30; attempt++) {
+        if (find.byKey(key).evaluate().isNotEmpty) return;
+        await tester.pump(const Duration(milliseconds: 16));
+      }
+      fail('Loading overlay $key did not appear.');
+    }
+
+    void expectReferenceGeometry(Key phaseKey, Color scrimColor) {
+      expect(find.byKey(phaseKey), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.byKey(const Key('transfer-loading-logo'))),
+        const Offset(234, 581),
+      );
+      expect(
+        tester.getSize(find.byKey(const Key('transfer-loading-logo'))),
+        const Size.square(120),
+      );
+      final barrier = tester.widget<ModalBarrier>(
+        find.byKey(const Key('transfer-loading-scrim')),
+      );
+      expect(barrier.color, scrimColor);
+      final image = tester.widget<Image>(
+        find.descendant(
+          of: find.byKey(const Key('transfer-loading-logo')),
+          matching: find.byType(Image),
+        ),
+      );
+      expect(
+        (image.image as AssetImage).assetName,
+        'assets/images/loading_original.png',
+      );
+    }
+
+    Future<void> expectExactDuration(Key key, Duration duration) async {
+      await tester.pump(const Duration(milliseconds: 1));
+      await tester.pump(duration - const Duration(milliseconds: 1));
+      expect(find.byKey(key), findsOneWidget);
+      await tester.pump(const Duration(milliseconds: 1));
+      await tester.pump();
+      expect(find.byKey(key), findsNothing);
+    }
+
+    const homeToRecipient = Key('transfer-loading-homeToRecipient');
+    await tester.tap(find.widgetWithText(OutlinedButton, '이체'));
+    await pumpUntilLoading(homeToRecipient);
+    expectReferenceGeometry(homeToRecipient, Colors.transparent);
+    expect(find.byType(HomeScreen), findsOneWidget);
+    await tester.pump(
+      transferHomeToRecipientScreenSwitchDelay -
+          const Duration(milliseconds: 1),
+    );
+    expect(find.byType(HomeScreen), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 1));
+    await tester.pump();
+    expect(find.text('누구에게 보낼까요?'), findsOneWidget);
+    expectReferenceGeometry(homeToRecipient, const Color(0x7E000000));
+    await tester.pump(
+      transferHomeToRecipientLoadingDuration -
+          transferHomeToRecipientScreenSwitchDelay -
+          const Duration(milliseconds: 1),
+    );
+    expect(find.byKey(homeToRecipient), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 1));
+    await tester.pump(const Duration(milliseconds: 1));
+    await tester.pump();
+    expect(find.byKey(homeToRecipient), findsNothing);
+
+    await tester.tap(find.byKey(const Key('recipient-TRINHTRUNG')));
+    await tester.pumpAndSettle();
+    for (final digit in ['5', '0', '0', '0']) {
+      await tester.tap(find.byKey(Key('amount-key-$digit')));
+      await tester.pump();
+    }
+    await tester.tap(find.byKey(const Key('transfer-next')));
+    await tester.pumpAndSettle();
+    for (final digit in ['1', '2', '3']) {
+      await tester.tap(find.byKey(Key('transfer-pin-key-$digit')));
+      await tester.pump();
+    }
+    await tester.tap(find.byKey(const Key('transfer-pin-key-4')));
+    await tester.pump(const Duration(milliseconds: 180));
+
+    const pinToWarning = Key('transfer-loading-pinToWarning');
+    await pumpUntilLoading(pinToWarning);
+    expectReferenceGeometry(pinToWarning, Colors.transparent);
+    expect(find.byKey(const Key('amount-key-1')), findsNothing);
+    expect(find.text('5,000원'), findsWidgets);
+    await tester.pump(
+      transferPinAcceptedScrimDelay - const Duration(milliseconds: 1),
+    );
+    expectReferenceGeometry(pinToWarning, Colors.transparent);
+    await tester.pump(const Duration(milliseconds: 1));
+    expectReferenceGeometry(pinToWarning, const Color(0x7E000000));
+    await tester.pump(
+      transferPinAcceptedLoadingDuration -
+          transferPinAcceptedScrimDelay -
+          const Duration(milliseconds: 1),
+    );
+    expect(find.byKey(pinToWarning), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 1));
+    await tester.pump(const Duration(milliseconds: 1));
+    await tester.pump();
+    expect(find.byKey(pinToWarning), findsNothing);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('transfer-warning-popup')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('transfer-warning-confirm')));
+    const warningToConfirmation = Key('transfer-loading-warningToConfirmation');
+    await pumpUntilLoading(warningToConfirmation);
+    expectReferenceGeometry(warningToConfirmation, Colors.transparent);
+    expect(find.byKey(const Key('amount-key-1')), findsNothing);
+    await tester.pump(
+      transferWarningScrimDelay - const Duration(milliseconds: 1),
+    );
+    expectReferenceGeometry(warningToConfirmation, Colors.transparent);
+    await tester.pump(const Duration(milliseconds: 1));
+    expectReferenceGeometry(warningToConfirmation, const Color(0x7E000000));
+    await tester.pump(
+      transferWarningScreenSwitchDelay - transferWarningScrimDelay,
+    );
+    expect(find.text('이체확인'), findsOneWidget);
+    await tester.pump(
+      transferWarningToConfirmationLoadingDuration -
+          transferWarningScreenSwitchDelay -
+          const Duration(milliseconds: 1),
+    );
+    expect(find.byKey(warningToConfirmation), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 1));
+    await tester.pump(const Duration(milliseconds: 1));
+    await tester.pump();
+    expect(find.byKey(warningToConfirmation), findsNothing);
+    expect(find.byKey(const Key('transfer-review-confirm')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('transfer-review-confirm')));
+    const confirmationToResult = Key('transfer-loading-confirmationToResult');
+    await pumpUntilLoading(confirmationToResult);
+    expectReferenceGeometry(confirmationToResult, const Color(0x7E000000));
+    expect(find.text('이체확인'), findsOneWidget);
+    await expectExactDuration(
+      confirmationToResult,
+      transferSubmissionLoadingDuration,
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(HomeScreen), findsOneWidget);
+    expect(find.byKey(const Key('transfer-failure-popup')), findsOneWidget);
+  });
+
+  testWidgets('transfer failure popup matches the NH6901 reference', (
+    tester,
+  ) async {
+    _configureMockupViewport(tester);
+    final store = AppDataStore.inMemory();
+    addTearDown(store.dispose);
+    await tester.pumpWidget(
+      _TestHost(
+        home: HomeScreen(auth: _VerifiedTransferAuth(), dataStore: store),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final popupFuture = showTransferFailurePopup(
+      tester.element(find.byType(HomeScreen)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.getSize(find.byKey(const Key('transfer-failure-popup'))),
+      const Size(435, 429),
     );
     expect(
-      failureButton.style?.backgroundColor?.resolve(<WidgetState>{}),
-      appGreen,
+      tester.getSize(find.byKey(const Key('transfer-failure-home-confirm'))),
+      const Size(385, 57),
     );
+    expect(find.text('거래가 제한되었습니다.'), findsOneWidget);
+    expect(find.text('(NH6901)'), findsOneWidget);
+    expect(find.textContaining('자금세탁 의심거래'), findsOneWidget);
+    expect(find.textContaining('1661-3000'), findsOneWidget);
+    expect(
+      (tester
+                  .widget<Image>(
+                    find.byKey(const Key('transfer-failure-brand')),
+                  )
+                  .image
+              as AssetImage)
+          .assetName,
+      'assets/images/ref_transfer_failure_brand.jpg',
+    );
+
+    await tester.tap(find.byKey(const Key('transfer-failure-home-confirm')));
+    await tester.pumpAndSettle();
+    await popupFuture;
+    expect(find.byKey(const Key('transfer-failure-popup')), findsNothing);
   });
 
   testWidgets('header menu jumps to benefits and keeps chrome fixed', (
@@ -746,7 +1350,7 @@ void main() {
     final header = find.byKey(const Key('home-native-header'));
     expect(
       MediaQuery.textScalerOf(tester.element(header)).scale(10),
-      closeTo(11.3, 0.001),
+      closeTo(10.0, 0.001),
     );
 
     await tester.tap(find.byKey(const Key('home-native-large-text')));
@@ -754,7 +1358,7 @@ void main() {
 
     expect(
       MediaQuery.textScalerOf(tester.element(header)).scale(10),
-      closeTo(12.769, 0.001),
+      closeTo(11.3, 0.001),
     );
     final accountCard = find.byKey(const Key('home-account-card'));
     final accountActions = find.byKey(const Key('home-account-actions'));
@@ -834,4 +1438,23 @@ class _TestHost extends StatelessWidget {
       home: home,
     );
   }
+}
+
+class _VerifiedTransferAuth extends AuthService {
+  @override
+  bool get isSignedIn => true;
+
+  @override
+  Future<PinStatus> pinStatus(PinPurpose purpose) async =>
+      const PinStatus(configured: true, failedAttempts: 0);
+
+  @override
+  Future<PinVerificationResult> verifyPin(
+    PinPurpose purpose,
+    String pin,
+  ) async => PinVerificationResult(
+    configured: true,
+    failedAttempts: pin == '1234' ? 0 : 1,
+    matched: pin == '1234',
+  );
 }

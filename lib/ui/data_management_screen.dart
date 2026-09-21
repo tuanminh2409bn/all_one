@@ -755,6 +755,7 @@ Future<void> _editRecipient(
         displayName: result.displayName,
         bankCode: result.bankCode,
         accountNumber: result.accountNumber,
+        showTransferWarning: result.showTransferWarning,
       );
     } else {
       await store.saveRecipient(
@@ -762,6 +763,7 @@ Future<void> _editRecipient(
           displayName: result.displayName,
           bankCode: result.bankCode,
           accountNumber: result.accountNumber,
+          showTransferWarning: result.showTransferWarning,
         ),
       );
     }
@@ -775,11 +777,13 @@ class _RecipientDraft {
     required this.displayName,
     required this.bankCode,
     required this.accountNumber,
+    required this.showTransferWarning,
   });
 
   final String displayName;
   final String bankCode;
   final String accountNumber;
+  final bool showTransferWarning;
 }
 
 class _RecipientEditor extends StatefulWidget {
@@ -800,6 +804,8 @@ class _RecipientEditorState extends State<_RecipientEditor> {
   late final _accountNumber = TextEditingController(
     text: widget.recipient?.accountNumber ?? '',
   );
+  late bool _showTransferWarning =
+      widget.recipient?.showTransferWarning ?? true;
 
   @override
   void dispose() {
@@ -845,6 +851,16 @@ class _RecipientEditorState extends State<_RecipientEditor> {
                   ? null
                   : '3~30자리 숫자로 입력해주세요.',
             ),
+            SwitchListTile.adaptive(
+              key: const Key('recipient-transfer-warning-toggle'),
+              contentPadding: EdgeInsets.zero,
+              value: _showTransferWarning,
+              activeThumbColor: const Color(0xFF1F9A3F),
+              title: const Text('이체 전 추가 확인'),
+              subtitle: const Text('PIN 확인 후 한 번 더 확인할지 설정합니다.'),
+              onChanged: (value) =>
+                  setState(() => _showTransferWarning = value),
+            ),
           ],
         ),
       ),
@@ -864,6 +880,7 @@ class _RecipientEditorState extends State<_RecipientEditor> {
               displayName: _name.text.trim(),
               bankCode: _bankCode,
               accountNumber: _accountNumber.text.trim(),
+              showTransferWarning: _showTransferWarning,
             ),
           );
         },

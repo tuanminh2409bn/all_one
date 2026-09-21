@@ -1,0 +1,103 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+
+const transferHomeToRecipientLoadingDuration = Duration(milliseconds: 400);
+const transferHomeToRecipientScreenSwitchDelay = Duration(milliseconds: 233);
+const transferPinAcceptedLoadingDuration = Duration(milliseconds: 1000);
+const transferPinAcceptedScrimDelay = Duration(milliseconds: 66);
+const transferWarningToConfirmationLoadingDuration = Duration(
+  milliseconds: 600,
+);
+const transferWarningScrimDelay = Duration(milliseconds: 33);
+const transferWarningScreenSwitchDelay = Duration(milliseconds: 67);
+const transferSubmissionLoadingDuration = Duration(milliseconds: 1400);
+
+/// The transfer loader measured from the original 588×1280 reference video.
+///
+/// The animation is the existing Loading 2 APNG, but transfer transitions use
+/// a 120 px box and a darker scrim than the authenticated PIN-to-Home loader.
+class TransferLoadingOverlay extends StatefulWidget {
+  const TransferLoadingOverlay({
+    super.key,
+    required this.playbackKey,
+    required this.duration,
+    required this.onComplete,
+    this.scrimDelay = Duration.zero,
+    this.onScrimShown,
+  });
+
+  final Object playbackKey;
+  final Duration duration;
+  final VoidCallback onComplete;
+  final Duration scrimDelay;
+  final VoidCallback? onScrimShown;
+
+  @override
+  State<TransferLoadingOverlay> createState() => _TransferLoadingOverlayState();
+}
+
+class _TransferLoadingOverlayState extends State<TransferLoadingOverlay>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _clock;
+  Timer? _scrimTimer;
+  late bool _scrimVisible;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrimVisible = widget.scrimDelay == Duration.zero;
+    if (!_scrimVisible) {
+      _scrimTimer = Timer(widget.scrimDelay, () {
+        if (!mounted) return;
+        setState(() => _scrimVisible = true);
+        widget.onScrimShown?.call();
+      });
+    }
+    _clock = AnimationController(vsync: this, duration: widget.duration)
+      ..addStatusListener((status) {
+        if (status == AnimationStatus.completed && mounted) {
+          widget.onComplete();
+        }
+      })
+      ..forward();
+  }
+
+  @override
+  void dispose() {
+    _scrimTimer?.cancel();
+    _clock.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Stack(
+    children: [
+      Positioned.fill(
+        child: ModalBarrier(
+          key: const Key('transfer-loading-scrim'),
+          color: _scrimVisible ? const Color(0x7E000000) : Colors.transparent,
+          dismissible: false,
+          semanticsLabel: '처리 중',
+        ),
+      ),
+      Positioned(
+        key: const Key('transfer-loading-logo'),
+        left: 234,
+        top: 581,
+        width: 120,
+        height: 120,
+        child: RepaintBoundary(
+          child: Image.asset(
+            'assets/images/loading_original.png',
+            key: ValueKey<Object>(widget.playbackKey),
+            fit: BoxFit.contain,
+            filterQuality: FilterQuality.high,
+            gaplessPlayback: true,
+            excludeFromSemantics: true,
+          ),
+        ),
+      ),
+    ],
+  );
+}
