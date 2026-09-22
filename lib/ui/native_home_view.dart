@@ -496,16 +496,26 @@ class _FortuneChip extends StatelessWidget {
                 borderRadius: BorderRadius.circular(11 * scale),
               ),
               child: Center(
-                child: Text(
-                  '오늘 운세 🍀',
-                  style: _style(
-                    context,
-                    16,
-                    weight: FontWeight.w500,
-                    color: Colors.white,
-                    height: 1,
-                    letterSpacing: -0.15,
-                  ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '오늘 운세',
+                      style: _style(
+                        context,
+                        16,
+                        weight: FontWeight.w500,
+                        color: Colors.white,
+                        height: 1,
+                        letterSpacing: -0.15,
+                      ),
+                    ),
+                    SizedBox(width: 3 * scale),
+                    SizedBox.square(
+                      dimension: 16 * scale,
+                      child: const CustomPaint(painter: _CloverPainter()),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -534,6 +544,81 @@ class _FortunePointerPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_FortunePointerPainter oldDelegate) => false;
+}
+
+class _CloverPainter extends CustomPainter {
+  const _CloverPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final unit = size.shortestSide / 16;
+    final leaf = Paint()..color = const Color(0xFF22A447);
+    final stem = Paint()
+      ..color = const Color(0xFF16863A)
+      ..strokeWidth = 1.4 * unit
+      ..strokeCap = StrokeCap.round;
+
+    canvas.save();
+    canvas.scale(unit, unit);
+    for (final center in const [
+      Offset(5.2, 5.2),
+      Offset(10.8, 5.2),
+      Offset(5.2, 10.2),
+      Offset(10.8, 10.2),
+    ]) {
+      canvas.drawCircle(center, 3.15, leaf);
+    }
+    canvas.drawLine(const Offset(9, 10.5), const Offset(12.8, 15), stem);
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant _CloverPainter oldDelegate) => false;
+}
+
+class _GrinningFacePainter extends CustomPainter {
+  const _GrinningFacePainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final unit = size.shortestSide / 23;
+    final face = Paint()..color = const Color(0xFFFFC83D);
+    final ink = Paint()
+      ..color = const Color(0xFF4D3100)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.45 * unit
+      ..strokeCap = StrokeCap.round;
+    canvas.drawCircle(size.center(Offset.zero), size.shortestSide / 2, face);
+    canvas.drawArc(
+      Rect.fromLTWH(4.3 * unit, 5.7 * unit, 5.2 * unit, 4.4 * unit),
+      .18,
+      2.45,
+      false,
+      ink,
+    );
+    canvas.drawArc(
+      Rect.fromLTWH(13.5 * unit, 5.7 * unit, 5.2 * unit, 4.4 * unit),
+      .5,
+      2.45,
+      false,
+      ink,
+    );
+    final mouth = RRect.fromRectAndRadius(
+      Rect.fromLTWH(4.3 * unit, 11.2 * unit, 14.4 * unit, 7.2 * unit),
+      Radius.circular(3.2 * unit),
+    );
+    canvas.drawRRect(mouth, Paint()..color = const Color(0xFF6A360B));
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(5.2 * unit, 11.7 * unit, 12.6 * unit, 4.1 * unit),
+        Radius.circular(1.4 * unit),
+      ),
+      Paint()..color = Colors.white,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _GrinningFacePainter oldDelegate) => false;
 }
 
 class _EventBanner extends StatelessWidget {
@@ -574,9 +659,9 @@ class _EventBanner extends StatelessWidget {
                     ),
                   ),
                   SizedBox(width: 6 * scale),
-                  Text(
-                    '😁',
-                    style: _style(context, 23, height: 1, letterSpacing: 0),
+                  SizedBox.square(
+                    dimension: 23 * scale,
+                    child: const CustomPaint(painter: _GrinningFacePainter()),
                   ),
                 ],
               ),
@@ -1147,7 +1232,7 @@ class _TljArtworkPainter extends CustomPainter {
     double fontSize,
   ) {
     final base = TextStyle(
-      fontFamily: 'NotoSansKR',
+      fontFamily: 'NotoSansKRMedium',
       fontSize: fontSize,
       fontWeight: FontWeight.w900,
       height: 1,

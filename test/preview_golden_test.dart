@@ -24,8 +24,8 @@ void main() {
   });
 
   setUpAll(() async {
-    final loader = FontLoader('NotoSansKR')
-      ..addFont(rootBundle.load('assets/fonts/NotoSansKR.ttf'))
+    final loader = FontLoader('NotoSansKRMedium')
+      ..addFont(rootBundle.load('assets/fonts/NotoSansKR-Medium.otf'))
       ..addFont(rootBundle.load('assets/fonts/NotoSansCJKkr-Bold.otf'));
     await loader.load();
     final materialIcons = FontLoader('MaterialIcons')

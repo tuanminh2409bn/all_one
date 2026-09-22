@@ -3,6 +3,15 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('the default w500 family uses the static Medium font', () {
+    final pubspec = File('pubspec.yaml').readAsStringSync();
+
+    expect(pubspec, contains('assets/fonts/NotoSansKR-Medium.otf'));
+    expect(pubspec, contains('family: NotoSansKRMedium'));
+    expect(pubspec, isNot(contains('assets/fonts/NotoSansKR.ttf')));
+    expect(File('assets/fonts/NotoSansKR-Medium.otf').existsSync(), isTrue);
+  });
+
   test('production Dart code never requests a weight below w500', () {
     final forbiddenPatterns = <RegExp>[
       RegExp(r'FontWeight\.(?:w100|w200|w300|w400|normal)\b'),

@@ -3181,7 +3181,7 @@ class _TransferConfirmationLoadingBackdrop extends StatelessWidget {
           text: TextSpan(
             style: TextStyle(
               color: Colors.black,
-              fontFamily: 'NotoSansKR',
+              fontFamily: 'NotoSansKRMedium',
               fontSize: 32,
               height: 1.27,
               fontWeight: FontWeight.w500,
@@ -3333,7 +3333,7 @@ class _TransferConfirmationPage extends StatelessWidget {
             text: TextSpan(
               style: const TextStyle(
                 color: Colors.black,
-                fontFamily: 'NotoSansKR',
+                fontFamily: 'NotoSansKRMedium',
                 fontSize: 32,
                 height: 1.27,
                 fontWeight: FontWeight.w500,
@@ -4102,7 +4102,7 @@ class _TransferPinMismatchPopup extends StatelessWidget {
       fontSize: 20,
       height: 1.62,
       fontWeight: FontWeight.w500,
-      fontFamily: 'NotoSansKR',
+      fontFamily: 'NotoSansKRMedium',
       letterSpacing: -.45,
     );
 

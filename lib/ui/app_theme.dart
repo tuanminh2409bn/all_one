@@ -10,7 +10,7 @@ ThemeData buildAllOneTheme() {
       primary: const Color(0xFF1AA35A),
     ).copyWith(onSurface: textBlack, onSurfaceVariant: textBlack),
     disabledColor: textBlack,
-    fontFamily: 'NotoSansKR',
+    fontFamily: 'NotoSansKRMedium',
     fontFamilyFallback: const [
       'Apple SD Gothic Neo',
       'Noto Sans KR',

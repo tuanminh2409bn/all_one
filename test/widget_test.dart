@@ -49,34 +49,20 @@ void main() {
     expect(tester.getSize(find.byType(BankLogo)), const Size.square(50));
   });
 
-  test(
-    'default Korean font uses medium weight 500 on every platform',
-    () async {
-      final data = await rootBundle.load('assets/fonts/NotoSansKR.ttf');
-      final tableCount = data.getUint16(4);
-      int? fvarOffset;
-      for (var index = 0; index < tableCount; index++) {
-        final recordOffset = 12 + (index * 16);
-        final tag = String.fromCharCodes([
-          for (var byte = 0; byte < 4; byte++)
-            data.getUint8(recordOffset + byte),
-        ]);
-        if (tag == 'fvar') {
-          fvarOffset = data.getUint32(recordOffset + 8);
-          break;
-        }
-      }
-      expect(fvarOffset, isNotNull);
-      final axesOffset = data.getUint16(fvarOffset! + 4);
-      final firstAxis = fvarOffset + axesOffset;
-      final axisTag = String.fromCharCodes([
-        for (var byte = 0; byte < 4; byte++) data.getUint8(firstAxis + byte),
+  test('default Korean font is a static face on every platform', () async {
+    final data = await rootBundle.load('assets/fonts/NotoSansKR-Medium.otf');
+    final tableCount = data.getUint16(4);
+    final tableTags = <String>{};
+    for (var index = 0; index < tableCount; index++) {
+      final recordOffset = 12 + (index * 16);
+      final tag = String.fromCharCodes([
+        for (var byte = 0; byte < 4; byte++) data.getUint8(recordOffset + byte),
       ]);
-      final defaultWeight = data.getInt32(firstAxis + 8) / 65536;
-      expect(axisTag, 'wght');
-      expect(defaultWeight, 500);
-    },
-  );
+      tableTags.add(tag);
+    }
+    expect(tableTags, contains('CFF '));
+    expect(tableTags, isNot(contains('fvar')));
+  });
 
   test('app theme renders normal copy at w500 or above in black', () {
     final theme = buildAllOneTheme();
@@ -533,6 +519,19 @@ void main() {
 
     final title = find.byKey(const Key('account-details-title'));
     final accountType = find.byKey(const Key('account-type-text'));
+    final accountNumber = find.byKey(const Key('account-number-text'));
+    expect(tester.widget<Text>(title).style?.color, Colors.black);
+    expect(tester.widget<Text>(accountType).style?.color, Colors.black);
+    expect(tester.widget<Text>(accountNumber).style?.color, Colors.black);
+    expect(
+      tester.widget<Text>(find.text('1개월 · 전체 · 최신순')).style?.color,
+      Colors.black,
+    );
+    expect(tester.widget<Text>(find.text('잔액 숨기기')).style?.color, Colors.black);
+    expect(
+      tester.widget<Text>(find.text('거래내역이 없습니다.')).style?.color,
+      Colors.black,
+    );
     final titleTop = tester.getTopLeft(title);
     final accountTypeTop = tester.getTopLeft(accountType);
     await tester.drag(
@@ -616,6 +615,22 @@ void main() {
     final text = tester.widget<Text>(timestamp);
     expect(text.style?.fontSize, 17);
     expect(text.style?.fontWeight, FontWeight.w500);
+    expect(text.style?.color, Colors.black);
+    expect(
+      tester
+          .widget<Text>(
+            find.byKey(
+              const Key('account-transaction-balance-seed-transaction-0'),
+            ),
+          )
+          .style
+          ?.color,
+      Colors.black,
+    );
+    expect(
+      tester.widget<Text>(find.text('TRINHTRUNGMINH')).style?.color,
+      Colors.black,
+    );
   });
 
   testWidgets('transaction history filter matches the reference flow', (

@@ -83,7 +83,7 @@ class DesignCanvas extends StatelessWidget {
                     ).copyWith(textScaler: TextScaler.noScaling),
                     child: DefaultTextStyle(
                       style: const TextStyle(
-                        fontFamily: 'NotoSansKR',
+                        fontFamily: 'NotoSansKRMedium',
                         fontWeight: FontWeight.w500,
                         fontVariations: [FontVariation('wght', 500)],
                         color: Colors.black,
