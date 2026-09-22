@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 
 ThemeData buildAllOneTheme() {
+  const textBlack = Colors.black;
   final base = ThemeData(
     useMaterial3: true,
     scaffoldBackgroundColor: Colors.white,
     colorScheme: ColorScheme.fromSeed(
       seedColor: const Color(0xFF1AA35A),
       primary: const Color(0xFF1AA35A),
-    ),
+    ).copyWith(onSurface: textBlack, onSurfaceVariant: textBlack),
+    disabledColor: textBlack,
     fontFamily: 'NotoSansKR',
     fontFamilyFallback: const [
       'Apple SD Gothic Neo',
@@ -19,6 +21,11 @@ ThemeData buildAllOneTheme() {
   return base.copyWith(
     textTheme: _withMediumDefaults(base.textTheme),
     primaryTextTheme: _withMediumDefaults(base.primaryTextTheme),
+    inputDecorationTheme: base.inputDecorationTheme.copyWith(
+      labelStyle: const TextStyle(color: textBlack),
+      floatingLabelStyle: const TextStyle(color: textBlack),
+      hintStyle: const TextStyle(color: textBlack),
+    ),
   );
 }
 
@@ -43,11 +50,13 @@ TextTheme _withMediumDefaults(TextTheme source) => source.copyWith(
 TextStyle? _atLeastMedium(TextStyle? style) {
   if (style == null) return null;
   final currentWeight = style.fontWeight;
-  if (currentWeight != null && currentWeight.value >= FontWeight.w500.value) {
-    return style;
-  }
+  final isAtLeastMedium =
+      currentWeight != null && currentWeight.value >= FontWeight.w500.value;
   return style.copyWith(
-    fontWeight: FontWeight.w500,
-    fontVariations: const [FontVariation('wght', 500)],
+    color: Colors.black,
+    fontWeight: isAtLeastMedium ? currentWeight : FontWeight.w500,
+    fontVariations: isAtLeastMedium
+        ? style.fontVariations
+        : const [FontVariation('wght', 500)],
   );
 }

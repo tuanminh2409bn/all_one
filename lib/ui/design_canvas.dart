@@ -86,7 +86,7 @@ class DesignCanvas extends StatelessWidget {
                         fontFamily: 'NotoSansKR',
                         fontWeight: FontWeight.w500,
                         fontVariations: [FontVariation('wght', 500)],
-                        color: Color(0xFF151820),
+                        color: Colors.black,
                       ),
                       child: child,
                     ),

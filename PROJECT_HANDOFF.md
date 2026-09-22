@@ -284,6 +284,11 @@ flutter build apk --debug
   - Transfer failures now propagate through both entry routes. In particular, Home captures the failed result returned through `AccountDetailsScreen`, so `Home → 거래내역 → 이체 → 이체확인` returns Home and opens the NH6901 popup just like the direct Home transfer route. A dedicated widget regression test covers this route.
   - Regenerated all affected golden checkpoints after visual review. `flutter test --concurrency=1` passed all 60 tests, including new regression checks for the font axis, Home balance spacing, transaction timestamp proportions, and keyboard-constrained recipient editor. `flutter analyze` reports only the pre-existing `ReorderableListView.onReorder` deprecation info.
   - iOS Simulator and Android debug smoke builds were explicitly stopped at the user's request. Flutter's automatic UIScene migration was fully reverted, Android Gradle configuration remained unchanged, and no platform build process was left running.
+- App-wide high-contrast text pass on 2026-09-22:
+  - All neutral gray copy now renders as solid black across the shared theme, design canvas, Home, authentication, PIN, limit release, transaction history, recipient entry, amount/PIN transfer, warning/confirmation, and failure popup screens.
+  - Semantic colors remain intact: white action copy and green/red/blue status or transaction text were not flattened to black. Gray backgrounds, borders, switches, and icons also remain unchanged.
+  - The app theme explicitly sets black `onSurface`, `onSurfaceVariant`, disabled, field label, field hint, and every base text-theme color while retaining the app-wide minimum `w500` rule. Updated golden baselines cover the intentional contrast change.
+  - All 54 non-golden tests pass. All 11 golden export scenarios regenerated successfully; the transaction-history golden also passes in focused comparison mode. `flutter analyze --no-pub` still reports only the pre-existing `ReorderableListView.onReorder` deprecation info.
 
 ## Known limits and next-session checklist
 

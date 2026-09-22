@@ -260,7 +260,7 @@ class _PinScreenState extends State<PinScreen> {
                           const Text(
                             'NH인증서',
                             style: TextStyle(
-                              color: Color(0xFF111111),
+                              color: Colors.black,
                               fontSize: 70,
                               fontWeight: FontWeight.w700,
                               letterSpacing: -2.5,
@@ -271,7 +271,7 @@ class _PinScreenState extends State<PinScreen> {
                             _instruction,
                             textAlign: TextAlign.center,
                             style: const TextStyle(
-                              color: Color(0xFF787878),
+                              color: Colors.black,
                               fontSize: 45,
                               fontWeight: FontWeight.w600,
                               letterSpacing: -2,
@@ -331,7 +331,7 @@ class _PinScreenState extends State<PinScreen> {
                         key: const Key('app-pin-reset'),
                         onPressed: _busy ? null : _resetPin,
                         style: FilledButton.styleFrom(
-                          foregroundColor: const Color(0xFF202020),
+                          foregroundColor: Colors.black,
                           backgroundColor: const Color(0xFFF1F3F4),
                           shape: const StadiumBorder(),
                           elevation: 0,

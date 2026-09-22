@@ -14,14 +14,14 @@ import 'data_management_screen.dart';
 import 'design_canvas.dart';
 import 'transfer_loading_overlay.dart';
 
-const _ink = Color(0xFF111827);
-const _muted = Color(0xFF62696B);
+const _ink = Colors.black;
+const _muted = Colors.black;
 const _line = Color(0xFFD9DDE5);
 const _green = Color(0xFF159757);
 const _recipientGreen = Color(0xFF1F9A3F);
-const _recipientInk = Color(0xFF303846);
-const _recipientMuted = Color(0xFF62696B);
-const _recipientPlaceholder = Color(0xFF62696B);
+const _recipientInk = Colors.black;
+const _recipientMuted = Colors.black;
+const _recipientPlaceholder = Colors.black;
 const _pinSymbolLeft = '__pin_symbol_left__';
 const _pinSymbolRight = '__pin_symbol_right__';
 const _recipientSectionStyle = TextStyle(
@@ -1418,7 +1418,7 @@ class _RecipientRow extends StatelessWidget {
                 key: Key('$keyPrefix-bank-account'),
                 style: const TextStyle(
                   fontSize: 20,
-                  color: Color(0xFF999999),
+                  color: Colors.black,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -1677,7 +1677,7 @@ class _ManualEntryState extends State<_ManualEntry> {
                 hintText: '계좌번호를 입력해 주세요',
                 constraints: const BoxConstraints.tightFor(height: 79),
                 hintStyle: const TextStyle(
-                  color: Color(0xFF858585),
+                  color: Colors.black,
                   fontSize: 26,
                   fontWeight: FontWeight.w500,
                   letterSpacing: -.65,
@@ -1733,7 +1733,7 @@ class _ManualEntryState extends State<_ManualEntry> {
             style: FilledButton.styleFrom(
               backgroundColor: _recipientGreen,
               disabledBackgroundColor: const Color(0xFFE6E6E6),
-              disabledForegroundColor: const Color(0xFF9C9C9C),
+              disabledForegroundColor: Colors.black,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -1742,9 +1742,7 @@ class _ManualEntryState extends State<_ManualEntry> {
             child: Text(
               '다음',
               style: TextStyle(
-                color: widget.canContinue
-                    ? Colors.white
-                    : const Color(0xFF9C9C9C),
+                color: widget.canContinue ? Colors.white : Colors.black,
                 fontSize: 23,
                 fontWeight: FontWeight.w500,
               ),
@@ -1769,9 +1767,7 @@ class _ManualEntryState extends State<_ManualEntry> {
                         Text(
                           tabs[index],
                           style: TextStyle(
-                            color: _tabIndex == index
-                                ? _ink
-                                : const Color(0xFF303030),
+                            color: _tabIndex == index ? _ink : Colors.black,
                             fontSize: 22,
                             fontWeight: _tabIndex == index
                                 ? FontWeight.w500
@@ -1862,7 +1858,7 @@ class _ManualEntryState extends State<_ManualEntry> {
                     decoration: InputDecoration(
                       hintText: '이름 또는 별칭',
                       hintStyle: const TextStyle(
-                        color: Color(0xFF858585),
+                        color: Colors.black,
                         fontSize: 25,
                         fontWeight: FontWeight.w500,
                         letterSpacing: -.5,
@@ -2223,9 +2219,7 @@ class _AmountPage extends StatelessWidget {
                   fontSize: entered ? 45 : 38,
                   fontWeight: entered ? FontWeight.w500 : FontWeight.w600,
                   fontVariations: [FontVariation('wght', entered ? 520 : 600)],
-                  color: entered
-                      ? const Color(0xFF111111)
-                      : const Color(0xFFC3C3C3),
+                  color: Colors.black,
                   letterSpacing: entered ? -1.8 : -1.2,
                 ),
               ),
@@ -2235,7 +2229,7 @@ class _AmountPage extends StatelessWidget {
                   '${_formatted(amount)}원',
                   key: const Key('amount-secondary-display'),
                   style: const TextStyle(
-                    color: Color(0xFF999999),
+                    color: Colors.black,
                     fontSize: 19,
                     fontWeight: FontWeight.w500,
                     letterSpacing: -.4,
@@ -2310,7 +2304,7 @@ class _TransferRecipientIdentity extends StatelessWidget {
           key: const Key('amount-recipient-name'),
           textAlign: TextAlign.center,
           style: const TextStyle(
-            color: Color(0xFF202020),
+            color: Colors.black,
             fontSize: 21,
             fontWeight: FontWeight.w500,
             letterSpacing: -.35,
@@ -2322,11 +2316,11 @@ class _TransferRecipientIdentity extends StatelessWidget {
           key: const Key('amount-recipient-account'),
           textAlign: TextAlign.center,
           style: const TextStyle(
-            color: Color(0xFF999999),
+            color: Colors.black,
             fontSize: 20,
             fontWeight: FontWeight.w500,
             decoration: TextDecoration.underline,
-            decorationColor: Color(0xFF999999),
+            decorationColor: Colors.black,
             decorationThickness: 1,
           ),
         ),
@@ -2564,7 +2558,7 @@ class _AmountChip extends StatelessWidget {
         onPressed: onTap,
         style: OutlinedButton.styleFrom(
           padding: EdgeInsets.zero,
-          foregroundColor: const Color(0xFF111111),
+          foregroundColor: Colors.black,
           side: const BorderSide(color: Color(0xFFDEDEDE)),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
@@ -2630,7 +2624,7 @@ class _AmountSourceCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    color: Color(0xFF737373),
+                    color: Colors.black,
                     fontSize: 20,
                     fontWeight: FontWeight.w500,
                     letterSpacing: -.7,
@@ -2641,7 +2635,7 @@ class _AmountSourceCard extends StatelessWidget {
                 '${_AmountPage._formatted(amount)}원',
                 key: const Key('amount-source-card-value'),
                 style: TextStyle(
-                  color: Color(0xFF111111),
+                  color: Colors.black,
                   fontSize: 20,
                   fontWeight: emphasizeAmount
                       ? FontWeight.w500
@@ -3170,7 +3164,7 @@ class _TransferConfirmationLoadingBackdrop extends StatelessWidget {
           '이체확인',
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: Color(0xFF111111),
+            color: Colors.black,
             fontSize: 25,
             fontWeight: FontWeight.w500,
             letterSpacing: -.7,
@@ -3186,7 +3180,7 @@ class _TransferConfirmationLoadingBackdrop extends StatelessWidget {
           textAlign: TextAlign.center,
           text: TextSpan(
             style: TextStyle(
-              color: Color(0xFF111111),
+              color: Colors.black,
               fontFamily: 'NotoSansKR',
               fontSize: 32,
               height: 1.27,
@@ -3290,7 +3284,7 @@ class _TransferConfirmationPage extends StatelessWidget {
             '이체확인',
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: Color(0xFF111111),
+              color: Colors.black,
               fontSize: 25,
               fontWeight: FontWeight.w500,
               letterSpacing: -.7,
@@ -3338,7 +3332,7 @@ class _TransferConfirmationPage extends StatelessWidget {
             textAlign: TextAlign.center,
             text: TextSpan(
               style: const TextStyle(
-                color: Color(0xFF111111),
+                color: Colors.black,
                 fontFamily: 'NotoSansKR',
                 fontSize: 32,
                 height: 1.27,
@@ -3431,7 +3425,7 @@ class _TransferConfirmationPage extends StatelessWidget {
                   key: const Key('transfer-review-add'),
                   onPressed: onAddTransfer,
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF111111),
+                    foregroundColor: Colors.black,
                     side: const BorderSide(color: Color(0xFFD4D4D4)),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(18),
@@ -3497,7 +3491,7 @@ class _TransferConfirmationRow extends StatelessWidget {
         child: Text(
           label,
           style: const TextStyle(
-            color: Color(0xFF666666),
+            color: Colors.black,
             fontSize: 20,
             fontWeight: FontWeight.w500,
             letterSpacing: -.45,
@@ -3525,7 +3519,7 @@ class _TransferConfirmationRow extends StatelessWidget {
                     value,
                     textAlign: TextAlign.right,
                     style: TextStyle(
-                      color: mutedValue ? const Color(0xFFB8B8B8) : valueColor,
+                      color: mutedValue ? Colors.black : valueColor,
                       fontSize: 20,
                       height: 1.35,
                       fontWeight: FontWeight.w500,
@@ -3582,7 +3576,7 @@ class _TransferPinMismatchBackdrop extends StatelessWidget {
                 '${_AmountPage._formatted(amount)}원',
                 key: const Key('loading-amount-display'),
                 style: const TextStyle(
-                  color: Color(0xFF111111),
+                  color: Colors.black,
                   fontSize: 45,
                   fontWeight: FontWeight.w500,
                   fontVariations: [FontVariation('wght', 520)],
@@ -3594,7 +3588,7 @@ class _TransferPinMismatchBackdrop extends StatelessWidget {
                 '${_AmountPage._formatted(amount)}원',
                 key: const Key('loading-amount-secondary-display'),
                 style: const TextStyle(
-                  color: Color(0xFF999999),
+                  color: Colors.black,
                   fontSize: 19,
                   fontWeight: FontWeight.w500,
                   letterSpacing: -.4,
@@ -3714,7 +3708,7 @@ class _TransferPinPage extends StatelessWidget {
                     key: const Key('transfer-pin-source-account'),
                     textAlign: TextAlign.center,
                     style: const TextStyle(
-                      color: Color(0xFF777777),
+                      color: Colors.black,
                       fontSize: 20,
                       fontWeight: FontWeight.w500,
                       letterSpacing: -.35,
@@ -3898,8 +3892,8 @@ class _PinKeypad extends StatelessWidget {
                           key: const Key('transfer-pin-ok'),
                           onPressed: enteredDigits == 4 ? () {} : null,
                           style: TextButton.styleFrom(
-                            foregroundColor: const Color(0xFF111111),
-                            disabledForegroundColor: const Color(0xFF111111),
+                            foregroundColor: Colors.black,
+                            disabledForegroundColor: Colors.black,
                           ),
                           child: const Text(
                             'OK',
@@ -3938,8 +3932,8 @@ class _PinDigitKey extends StatelessWidget {
     key: Key('transfer-pin-key-$value'),
     onPressed: enabled ? () => onDigit(value) : null,
     style: TextButton.styleFrom(
-      foregroundColor: const Color(0xFF111111),
-      disabledForegroundColor: const Color(0xFF777777),
+      foregroundColor: Colors.black,
+      disabledForegroundColor: Colors.black,
     ),
     child: Text(
       value,
@@ -4002,7 +3996,7 @@ class _TransferWarningPopup extends StatelessWidget {
                       const Text(
                         '한 번 더 확인해 주세요',
                         style: TextStyle(
-                          color: Color(0xFF111111),
+                          color: Colors.black,
                           fontSize: 22,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 1.5,
@@ -4014,7 +4008,7 @@ class _TransferWarningPopup extends StatelessWidget {
                         key: const Key('transfer-warning-message'),
                         textAlign: TextAlign.center,
                         style: const TextStyle(
-                          color: Color(0xFF1D1D1D),
+                          color: Colors.black,
                           fontSize: 20,
                           height: 1.55,
                           fontWeight: FontWeight.w500,
@@ -4033,7 +4027,7 @@ class _TransferWarningPopup extends StatelessWidget {
                                 onPressed: () =>
                                     Navigator.of(context).pop(false),
                                 style: OutlinedButton.styleFrom(
-                                  foregroundColor: const Color(0xFF111111),
+                                  foregroundColor: Colors.black,
                                   side: const BorderSide(
                                     color: Color(0xFFD2D2D2),
                                     width: 1.4,
@@ -4104,7 +4098,7 @@ class _TransferPinMismatchPopup extends StatelessWidget {
       viewport.height / mockupHeight,
     );
     const bodyStyle = TextStyle(
-      color: Color(0xFF252525),
+      color: Colors.black,
       fontSize: 20,
       height: 1.62,
       fontWeight: FontWeight.w500,
@@ -4137,7 +4131,7 @@ class _TransferPinMismatchPopup extends StatelessWidget {
                       const Text(
                         '안내',
                         style: TextStyle(
-                          color: Color(0xFF111111),
+                          color: Colors.black,
                           fontSize: 21,
                           height: 1.35,
                           fontWeight: FontWeight.w700,
@@ -4198,7 +4192,7 @@ class _TransferPinMismatchPopup extends StatelessWidget {
                               const Text(
                                 '고객행복센터 : ',
                                 style: TextStyle(
-                                  color: Color(0xFF929292),
+                                  color: Colors.black,
                                   fontSize: 17.5,
                                   fontWeight: FontWeight.w500,
                                   letterSpacing: -.45,
@@ -4208,7 +4202,7 @@ class _TransferPinMismatchPopup extends StatelessWidget {
                               const Text(
                                 ', ',
                                 style: TextStyle(
-                                  color: Color(0xFF929292),
+                                  color: Colors.black,
                                   fontSize: 17.5,
                                 ),
                               ),
@@ -4262,12 +4256,12 @@ class _UnderlinedContact extends StatelessWidget {
   Widget build(BuildContext context) => Text(
     text,
     style: const TextStyle(
-      color: Color(0xFF929292),
+      color: Colors.black,
       fontSize: 17.5,
       fontWeight: FontWeight.w500,
       letterSpacing: -.35,
       decoration: TextDecoration.underline,
-      decorationColor: Color(0xFF929292),
+      decorationColor: Colors.black,
     ),
   );
 }
@@ -4330,7 +4324,7 @@ class _TransferFailurePopup extends StatelessWidget {
                             key: Key('transfer-failure-title'),
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              color: Color(0xFF111111),
+                              color: Colors.black,
                               fontSize: 21,
                               height: 1.28,
                               fontWeight: FontWeight.w700,
@@ -4342,7 +4336,7 @@ class _TransferFailurePopup extends StatelessWidget {
                             key: Key('transfer-failure-code'),
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              color: Color(0xFF111111),
+                              color: Colors.black,
                               fontSize: 18,
                               height: 1.3,
                               fontWeight: FontWeight.w500,
@@ -4362,7 +4356,7 @@ class _TransferFailurePopup extends StatelessWidget {
                         key: Key('transfer-failure-reason'),
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: Color(0xFF252525),
+                          color: Colors.black,
                           fontSize: 17.5,
                           height: 1.55,
                           fontWeight: FontWeight.w500,
@@ -4381,7 +4375,7 @@ class _TransferFailurePopup extends StatelessWidget {
                         key: Key('transfer-failure-contact'),
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: Color(0xFF252525),
+                          color: Colors.black,
                           fontSize: 17.5,
                           height: 1.55,
                           fontWeight: FontWeight.w500,

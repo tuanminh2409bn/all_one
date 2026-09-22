@@ -4,8 +4,8 @@ import '../core/auth_service.dart';
 
 const _green = Color(0xFF1AA35A);
 const _darkGreen = Color(0xFF087A43);
-const _ink = Color(0xFF171A1F);
-const _muted = Color(0xFF737A86);
+const _ink = Colors.black;
+const _muted = Colors.black;
 const _fieldFill = Color(0xFFF5F7F6);
 
 Future<bool> showAuthSheet(
@@ -455,7 +455,7 @@ class _AuthSheetState extends State<_AuthSheet> {
                             ? 'Firebase 보안 인증으로 안전하게 보호됩니다'
                             : '입력한 정보는 안전하게 보호됩니다',
                         style: const TextStyle(
-                          color: Color(0xFF89918D),
+                          color: Colors.black,
                           fontSize: 11,
                           letterSpacing: -0.2,
                         ),
@@ -490,7 +490,7 @@ class _AuthSheetState extends State<_AuthSheet> {
       fillColor: _fieldFill,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 17),
       labelStyle: const TextStyle(color: _muted, fontSize: 14),
-      hintStyle: const TextStyle(color: Color(0xFFA4AAA7), fontSize: 13),
+      hintStyle: const TextStyle(color: Colors.black, fontSize: 13),
       prefixIconColor: const Color(0xFF747D78),
       suffixIconColor: const Color(0xFF747D78),
       border: border,

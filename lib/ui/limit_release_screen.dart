@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import '../core/app_data.dart';
 import 'design_canvas.dart';
 
-const _ink = Color(0xFF111111);
-const _muted = Color(0xFF62696B);
-const _lightMuted = Color(0xFF62696B);
+const _ink = Colors.black;
+const _muted = Colors.black;
+const _lightMuted = Colors.black;
 const _divider = Color(0xFFF3F3F3);
 
 class LimitReleaseScreen extends StatefulWidget {

@@ -78,7 +78,7 @@ void main() {
     },
   );
 
-  test('app theme never renders normal copy below weight 500', () {
+  test('app theme renders normal copy at w500 or above in black', () {
     final theme = buildAllOneTheme();
     final styles = <TextStyle?>[
       theme.textTheme.bodyLarge,
@@ -93,7 +93,13 @@ void main() {
     ];
     for (final style in styles) {
       expect(style?.fontWeight?.value, greaterThanOrEqualTo(500));
+      expect(style?.color, Colors.black);
     }
+    expect(theme.colorScheme.onSurface, Colors.black);
+    expect(theme.colorScheme.onSurfaceVariant, Colors.black);
+    expect(theme.disabledColor, Colors.black);
+    expect(theme.inputDecorationTheme.labelStyle?.color, Colors.black);
+    expect(theme.inputDecorationTheme.hintStyle?.color, Colors.black);
   });
 
   test(
@@ -811,7 +817,7 @@ void main() {
       );
       expect(recipientBankAccount.style?.fontSize, 20);
       expect(recipientBankAccount.style?.fontWeight, FontWeight.w500);
-      expect(recipientBankAccount.style?.color, const Color(0xFF999999));
+      expect(recipientBankAccount.style?.color, Colors.black);
       expect(
         tester
             .widget<BankLogo>(find.byKey(const Key('recipient-bank-logo')))

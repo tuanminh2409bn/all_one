@@ -8,9 +8,9 @@ import 'data_management_screen.dart';
 import 'design_canvas.dart';
 import 'transfer_recipient_screen.dart';
 
-const _detailsInk = Color(0xFF141820);
-const _detailsMuted = Color(0xFF626B79);
-const _detailsSecondary = Color(0xFF505866);
+const _detailsInk = Colors.black;
+const _detailsMuted = Colors.black;
+const _detailsSecondary = Colors.black;
 const _detailsGreen = Color(0xFF159757);
 
 enum _HistoryPeriodMode { monthly, range }
@@ -952,7 +952,7 @@ class _FilterBar extends StatelessWidget {
                     Text(
                       label,
                       style: const TextStyle(
-                        color: Color(0xFF444849),
+                        color: Colors.black,
                         fontSize: 18,
                         fontWeight: FontWeight.w500,
                         letterSpacing: -0.7,
@@ -1702,7 +1702,7 @@ class _AmountFilterField extends StatelessWidget {
         ),
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: const TextStyle(color: Color(0xFF9DA5B3)),
+          hintStyle: const TextStyle(color: Colors.black),
           contentPadding: EdgeInsets.symmetric(horizontal: 10 * unit),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14 * unit),

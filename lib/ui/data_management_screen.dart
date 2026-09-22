@@ -259,7 +259,7 @@ class _TransactionsPanelState extends State<_TransactionsPanel> {
                               fontWeight: FontWeight.w700,
                               color: transaction.incoming
                                   ? const Color(0xFF0969F6)
-                                  : const Color(0xFF151820),
+                                  : Colors.black,
                             ),
                           ),
                           PopupMenuButton<String>(

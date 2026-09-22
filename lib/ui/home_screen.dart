@@ -171,7 +171,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ? '안전하게 로그인되어 있습니다.'
                                 : '로그인하고 모든 금융 서비스를 이용해 보세요.',
                             style: const TextStyle(
-                              color: Color(0xFF747B7D),
+                              color: Colors.black,
                               fontSize: 14,
                             ),
                           ),

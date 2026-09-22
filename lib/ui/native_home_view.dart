@@ -11,7 +11,7 @@ const _designWidth = 588.0;
 const _normalHomeTextScale = 1.0;
 const _largeHomeTextMultiplier = 1.13;
 const _homeBackground = Color(0xFFEEF2F3);
-const _ink = Color(0xFF111111);
+const _ink = Colors.black;
 const _green = Color(0xFF159757);
 const _cardRadius = 24.0;
 
@@ -282,10 +282,15 @@ TextStyle _style(
     fontVariations: variableWeight == null
         ? null
         : [FontVariation('wght', variableWeight)],
-    color: color,
+    color: _highContrastHomeTextColor(color),
     height: height,
     letterSpacing: letterSpacing * scale,
   );
+}
+
+Color _highContrastHomeTextColor(Color color) {
+  if (color == Colors.white) return color;
+  return HSLColor.fromColor(color).saturation < .25 ? Colors.black : color;
 }
 
 bool _usesLargeHomeText(BuildContext context) {
