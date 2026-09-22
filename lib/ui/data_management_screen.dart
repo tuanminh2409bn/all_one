@@ -816,6 +816,8 @@ class _RecipientEditorState extends State<_RecipientEditor> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
+    key: const Key('recipient-editor-dialog'),
+    scrollable: true,
     title: Text(widget.recipient == null ? '받는 분 추가' : '받는 분 수정'),
     content: SizedBox(
       width: 460,

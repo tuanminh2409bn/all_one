@@ -54,7 +54,7 @@ enum _TransferStage {
   transferWarning,
 }
 
-enum _TransferPinMode { legacy, loading, verify, create, confirm }
+enum _TransferPinMode { guest, loading, verify, create, confirm }
 
 enum _TransferLoadingPhase {
   pinToWarning,
@@ -100,7 +100,7 @@ class _TransferRecipientScreenState extends State<TransferRecipientScreen> {
   String? _sourceAccountId;
   final List<String> _pinDigits = [];
   List<String> _pinKeys = const [];
-  _TransferPinMode _pinMode = _TransferPinMode.legacy;
+  _TransferPinMode _pinMode = _TransferPinMode.guest;
   String? _pendingTransferPin;
   String? _pinSetupError;
   int _pinFailedAttempts = 0;
@@ -350,7 +350,7 @@ class _TransferRecipientScreenState extends State<TransferRecipientScreen> {
       );
       _pinMode = needsProtectedPin
           ? _TransferPinMode.loading
-          : _TransferPinMode.legacy;
+          : _TransferPinMode.guest;
       _pendingTransferPin = null;
       _pinSetupError = null;
       _pinFailedAttempts = 0;
@@ -496,8 +496,12 @@ class _TransferRecipientScreenState extends State<TransferRecipientScreen> {
     switch (_pinMode) {
       case _TransferPinMode.loading:
         return;
-      case _TransferPinMode.legacy:
-        await _showPinMismatch(_pinFailedAttempts + 1);
+      case _TransferPinMode.guest:
+        // Guest mode only operates on local demonstration data. There is no
+        // authenticated account scope in which a persistent PIN can safely
+        // be stored, so a complete four-digit entry continues the simulated
+        // transfer without weakening signed-in PIN verification.
+        await _completeTransferAfterPin();
         return;
       case _TransferPinMode.create:
         setState(() {
@@ -663,200 +667,206 @@ class _TransferRecipientScreenState extends State<TransferRecipientScreen> {
         darkIcons: true,
         backgroundColor: const Color(0xFFF0F3FA),
       ),
-      child: DesignCanvas(
-        child: Material(
-          color: Colors.white,
-          child: Stack(
-            children: [
-              _TopControls(
-                onBack: _back,
-                onManageRecipients: _openRecipientManagement,
-                onCancel: () => Navigator.of(context).pop(),
-                showBack:
-                    _stage != _TransferStage.confirmation &&
-                    _stage != _TransferStage.loadingConfirmation,
-                showCancel:
-                    _stage == _TransferStage.recipient ||
-                    _stage == _TransferStage.amount ||
-                    _stage == _TransferStage.pin ||
-                    _stage == _TransferStage.pinMismatch ||
-                    _stage == _TransferStage.loadingAmount ||
-                    _stage == _TransferStage.transferWarning,
-                showRecipientActions:
-                    _stage == _TransferStage.recipient && !_manualEntry,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          DesignCanvas(
+            child: Material(
+              color: Colors.white,
+              child: Stack(
+                children: [
+                  _TopControls(
+                    onBack: _back,
+                    onManageRecipients: _openRecipientManagement,
+                    onCancel: () => Navigator.of(context).pop(),
+                    showBack:
+                        _stage != _TransferStage.confirmation &&
+                        _stage != _TransferStage.loadingConfirmation,
+                    showCancel:
+                        _stage == _TransferStage.recipient ||
+                        _stage == _TransferStage.amount ||
+                        _stage == _TransferStage.pin ||
+                        _stage == _TransferStage.pinMismatch ||
+                        _stage == _TransferStage.loadingAmount ||
+                        _stage == _TransferStage.transferWarning,
+                    showRecipientActions:
+                        _stage == _TransferStage.recipient && !_manualEntry,
+                  ),
+                  if (_stage == _TransferStage.confirmation)
+                    _TransferConfirmationPage(
+                      sourceAccount: sourceAccount!,
+                      bank: _bank ?? '토스뱅크',
+                      // The final review intentionally follows the banking
+                      // reference and shows the destination as digits only.
+                      account: AppDataStore.normalizedAccountNumber(_account),
+                      recipientName: _recipientName,
+                      recipientUsesHonorific: _destinationAccountId == null,
+                      amount: _amount,
+                      onClose: _back,
+                      onAddTransfer: () =>
+                          setState(() => _stage = _TransferStage.recipient),
+                      onTransfer: _returnToHome,
+                    )
+                  else if (_stage == _TransferStage.loadingConfirmation)
+                    const _TransferConfirmationLoadingBackdrop()
+                  else if (_stage == _TransferStage.pinMismatch ||
+                      _stage == _TransferStage.loadingAmount ||
+                      _stage == _TransferStage.transferWarning)
+                    _TransferPinMismatchBackdrop(
+                      sourceAccount: sourceAccount!,
+                      bank: _bank ?? '토스뱅크',
+                      account: _account,
+                      recipientName: _recipientName,
+                      amount: _amount,
+                      showAmount: _stage == _TransferStage.loadingAmount,
+                    )
+                  else if (_stage == _TransferStage.pin)
+                    _TransferPinPage(
+                      title: _transferPinTitle,
+                      sourceAccount: sourceAccount!,
+                      bank: _bank ?? '토스뱅크',
+                      account: _account,
+                      recipientName: _recipientName,
+                      enteredDigits: _pinDigits.length,
+                      keys: _pinKeys,
+                      errorMessage: _transferPinError,
+                      showReset:
+                          _pinMode == _TransferPinMode.verify &&
+                          _pinFailedAttempts > 0,
+                      inputEnabled: !_pinInputLocked && !_pinBusy,
+                      onDigit: _appendPinDigit,
+                      onDelete: _deletePinDigit,
+                      onRearrange: _rearrangePinKeys,
+                      onClose: _back,
+                      onReset: _resetTransferPin,
+                    )
+                  else if (_stage == _TransferStage.amount &&
+                      sourceAccount != null)
+                    _AmountPage(
+                      sourceAccount: sourceAccount,
+                      bank: _bank ?? '토스뱅크',
+                      account: _account.isEmpty ? '100237698805' : _account,
+                      recipientName: _recipientName,
+                      amount: _amount,
+                      onDigit: _appendAmount,
+                      onDelete: _deleteAmount,
+                      onShortcut: _setAmount,
+                      onChooseSourceAccount: () =>
+                          setState(() => _sourceAccountSelectorVisible = true),
+                      bottomInset: bottomSystemInset,
+                    )
+                  else if (_manualEntry)
+                    _ManualEntry(
+                      controller: _accountController,
+                      bank: _bank,
+                      recentRecipients: _savedRecipients,
+                      ownAccounts: _ownAccounts,
+                      onAccountChanged: _setAccount,
+                      onChooseBank: _pickBank,
+                      onSelectRecipient: _chooseRecipient,
+                      onToggleFavorite: _toggleFavorite,
+                      onManageRecipients: _openRecipientManagement,
+                      canContinue: _canContinue && sourceAccount != null,
+                      onContinue: _continueManualEntry,
+                    )
+                  else
+                    _RecipientLanding(
+                      ownAccounts: _ownAccounts,
+                      recipients: _savedRecipients,
+                      favoriteRecipientsExpanded: _favoriteRecipientsExpanded,
+                      myAccountsExpanded: _myAccountsExpanded,
+                      recentRecipientsExpanded: _recentRecipientsExpanded,
+                      onSearch: _searchRecipients,
+                      onEditFavorites: _openRecipientManagement,
+                      onToggleFavoriteRecipients: () => setState(
+                        () => _favoriteRecipientsExpanded =
+                            !_favoriteRecipientsExpanded,
+                      ),
+                      onToggleMyAccounts: () => setState(
+                        () => _myAccountsExpanded = !_myAccountsExpanded,
+                      ),
+                      onToggleRecentRecipients: () => setState(
+                        () => _recentRecipientsExpanded =
+                            !_recentRecipientsExpanded,
+                      ),
+                      onManual: _startManualEntry,
+                      onCamera: _startManualEntry,
+                      onSelect: _chooseRecipient,
+                      onToggleFavorite: _toggleFavorite,
+                    ),
+                  if (_stage != _TransferStage.recipient &&
+                      _stage != _TransferStage.pin &&
+                      _stage != _TransferStage.pinMismatch &&
+                      _stage != _TransferStage.loadingAmount &&
+                      _stage != _TransferStage.loadingConfirmation &&
+                      _stage != _TransferStage.transferWarning &&
+                      _stage != _TransferStage.confirmation)
+                    Positioned(
+                      left: _stage == _TransferStage.amount ? 35 : 28,
+                      right: _stage == _TransferStage.amount ? 35 : 28,
+                      bottom: actionButtonBottom + bottomSystemInset,
+                      height: actionButtonHeight,
+                      child: FilledButton(
+                        key: const Key('transfer-next'),
+                        onPressed: _stage == _TransferStage.amount
+                            ? (_amount > 0 ? _startPinEntry : null)
+                            : (_stage == _TransferStage.confirmation
+                                  ? _startPinEntry
+                                  : _canContinue && sourceAccount != null
+                                  ? _continueManualEntry
+                                  : null),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: _recipientGreen,
+                          disabledBackgroundColor: const Color(0xFFE9E9E9),
+                          disabledForegroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: Text(
+                          _stage == _TransferStage.confirmation ? '보내기' : '다음',
+                          style: TextStyle(
+                            fontSize: _manualEntry ? 22 : 23,
+                            fontWeight: _manualEntry
+                                ? FontWeight.w500
+                                : FontWeight.w700,
+                            fontVariations: [
+                              FontVariation('wght', _manualEntry ? 500 : 700),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  if (_sourceAccountSelectorVisible)
+                    _SourceAccountSelector(
+                      accounts: _availableSourceAccounts,
+                      selectedAccount: sourceAccount!,
+                      onSelect: (account) => setState(() {
+                        _sourceAccountId = account.id;
+                        _sourceAccountSelectorVisible = false;
+                      }),
+                      onClose: () =>
+                          setState(() => _sourceAccountSelectorVisible = false),
+                    ),
+                ],
               ),
-              if (_stage == _TransferStage.confirmation)
-                _TransferConfirmationPage(
-                  sourceAccount: sourceAccount!,
-                  bank: _bank ?? '토스뱅크',
-                  // The final review intentionally follows the banking
-                  // reference and shows the destination as digits only.
-                  account: AppDataStore.normalizedAccountNumber(_account),
-                  recipientName: _recipientName,
-                  recipientUsesHonorific: _destinationAccountId == null,
-                  amount: _amount,
-                  onClose: _back,
-                  onAddTransfer: () =>
-                      setState(() => _stage = _TransferStage.recipient),
-                  onTransfer: _returnToHome,
-                )
-              else if (_stage == _TransferStage.loadingConfirmation)
-                const _TransferConfirmationLoadingBackdrop()
-              else if (_stage == _TransferStage.pinMismatch ||
-                  _stage == _TransferStage.loadingAmount ||
-                  _stage == _TransferStage.transferWarning)
-                _TransferPinMismatchBackdrop(
-                  sourceAccount: sourceAccount!,
-                  bank: _bank ?? '토스뱅크',
-                  account: _account,
-                  recipientName: _recipientName,
-                  amount: _amount,
-                  showAmount: _stage == _TransferStage.loadingAmount,
-                )
-              else if (_stage == _TransferStage.pin)
-                _TransferPinPage(
-                  title: _transferPinTitle,
-                  sourceAccount: sourceAccount!,
-                  bank: _bank ?? '토스뱅크',
-                  account: _account,
-                  recipientName: _recipientName,
-                  enteredDigits: _pinDigits.length,
-                  keys: _pinKeys,
-                  errorMessage: _transferPinError,
-                  showReset:
-                      _pinMode == _TransferPinMode.verify &&
-                      _pinFailedAttempts > 0,
-                  inputEnabled: !_pinInputLocked && !_pinBusy,
-                  onDigit: _appendPinDigit,
-                  onDelete: _deletePinDigit,
-                  onRearrange: _rearrangePinKeys,
-                  onClose: _back,
-                  onReset: _resetTransferPin,
-                )
-              else if (_stage == _TransferStage.amount && sourceAccount != null)
-                _AmountPage(
-                  sourceAccount: sourceAccount,
-                  bank: _bank ?? '토스뱅크',
-                  account: _account.isEmpty ? '100237698805' : _account,
-                  recipientName: _recipientName,
-                  amount: _amount,
-                  onDigit: _appendAmount,
-                  onDelete: _deleteAmount,
-                  onShortcut: _setAmount,
-                  onChooseSourceAccount: () =>
-                      setState(() => _sourceAccountSelectorVisible = true),
-                  bottomInset: bottomSystemInset,
-                )
-              else if (_manualEntry)
-                _ManualEntry(
-                  controller: _accountController,
-                  bank: _bank,
-                  recentRecipients: _savedRecipients,
-                  ownAccounts: _ownAccounts,
-                  onAccountChanged: _setAccount,
-                  onChooseBank: _pickBank,
-                  onSelectRecipient: _chooseRecipient,
-                  onToggleFavorite: _toggleFavorite,
-                  onManageRecipients: _openRecipientManagement,
-                  canContinue: _canContinue && sourceAccount != null,
-                  onContinue: _continueManualEntry,
-                )
-              else
-                _RecipientLanding(
-                  ownAccounts: _ownAccounts,
-                  recipients: _savedRecipients,
-                  favoriteRecipientsExpanded: _favoriteRecipientsExpanded,
-                  myAccountsExpanded: _myAccountsExpanded,
-                  recentRecipientsExpanded: _recentRecipientsExpanded,
-                  onSearch: _searchRecipients,
-                  onEditFavorites: _openRecipientManagement,
-                  onToggleFavoriteRecipients: () => setState(
-                    () => _favoriteRecipientsExpanded =
-                        !_favoriteRecipientsExpanded,
-                  ),
-                  onToggleMyAccounts: () => setState(
-                    () => _myAccountsExpanded = !_myAccountsExpanded,
-                  ),
-                  onToggleRecentRecipients: () => setState(
-                    () =>
-                        _recentRecipientsExpanded = !_recentRecipientsExpanded,
-                  ),
-                  onManual: _startManualEntry,
-                  onCamera: _startManualEntry,
-                  onSelect: _chooseRecipient,
-                  onToggleFavorite: _toggleFavorite,
-                ),
-              if (_stage != _TransferStage.recipient &&
-                  _stage != _TransferStage.pin &&
-                  _stage != _TransferStage.pinMismatch &&
-                  _stage != _TransferStage.loadingAmount &&
-                  _stage != _TransferStage.loadingConfirmation &&
-                  _stage != _TransferStage.transferWarning &&
-                  _stage != _TransferStage.confirmation)
-                Positioned(
-                  left: _stage == _TransferStage.amount ? 35 : 28,
-                  right: _stage == _TransferStage.amount ? 35 : 28,
-                  bottom: actionButtonBottom + bottomSystemInset,
-                  height: actionButtonHeight,
-                  child: FilledButton(
-                    key: const Key('transfer-next'),
-                    onPressed: _stage == _TransferStage.amount
-                        ? (_amount > 0 ? _startPinEntry : null)
-                        : (_stage == _TransferStage.confirmation
-                              ? _startPinEntry
-                              : _canContinue && sourceAccount != null
-                              ? _continueManualEntry
-                              : null),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: _recipientGreen,
-                      disabledBackgroundColor: const Color(0xFFE9E9E9),
-                      disabledForegroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    child: Text(
-                      _stage == _TransferStage.confirmation ? '보내기' : '다음',
-                      style: TextStyle(
-                        fontSize: _manualEntry ? 22 : 23,
-                        fontWeight: _manualEntry
-                            ? FontWeight.w500
-                            : FontWeight.w700,
-                        fontVariations: [
-                          FontVariation('wght', _manualEntry ? 500 : 700),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              if (_sourceAccountSelectorVisible)
-                _SourceAccountSelector(
-                  accounts: _availableSourceAccounts,
-                  selectedAccount: sourceAccount!,
-                  onSelect: (account) => setState(() {
-                    _sourceAccountId = account.id;
-                    _sourceAccountSelectorVisible = false;
-                  }),
-                  onClose: () =>
-                      setState(() => _sourceAccountSelectorVisible = false),
-                ),
-              if (_loadingPhase case final loadingPhase?)
-                TransferLoadingOverlay(
-                  key: Key('transfer-loading-${loadingPhase.name}'),
-                  playbackKey: loadingPlaybackId,
-                  duration: _loadingDuration!,
-                  scrimDelay: switch (loadingPhase) {
-                    _TransferLoadingPhase.pinToWarning =>
-                      transferPinAcceptedScrimDelay,
-                    _TransferLoadingPhase.warningToConfirmation =>
-                      transferWarningScrimDelay,
-                    _ => Duration.zero,
-                  },
-                  onComplete: () => _completeTransferLoading(loadingPlaybackId),
-                ),
-            ],
+            ),
           ),
-        ),
+          if (_loadingPhase case final loadingPhase?)
+            TransferLoadingOverlay(
+              key: Key('transfer-loading-${loadingPhase.name}'),
+              playbackKey: loadingPlaybackId,
+              duration: _loadingDuration!,
+              scrimDelay: switch (loadingPhase) {
+                _TransferLoadingPhase.pinToWarning =>
+                  transferPinAcceptedScrimDelay,
+                _TransferLoadingPhase.warningToConfirmation =>
+                  transferWarningScrimDelay,
+                _ => Duration.zero,
+              },
+              onComplete: () => _completeTransferLoading(loadingPlaybackId),
+            ),
+        ],
       ),
     );
   }
@@ -937,7 +947,7 @@ class _TopControls extends StatelessWidget {
               '취소',
               style: TextStyle(
                 fontSize: 19,
-                fontWeight: FontWeight.w400,
+                fontWeight: FontWeight.w500,
                 letterSpacing: -.4,
               ),
             ),
@@ -1409,7 +1419,7 @@ class _RecipientRow extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 20,
                   color: Color(0xFF999999),
-                  fontWeight: FontWeight.w400,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ],
@@ -1669,7 +1679,7 @@ class _ManualEntryState extends State<_ManualEntry> {
                 hintStyle: const TextStyle(
                   color: Color(0xFF858585),
                   fontSize: 26,
-                  fontWeight: FontWeight.w400,
+                  fontWeight: FontWeight.w500,
                   letterSpacing: -.65,
                 ),
                 contentPadding: const EdgeInsets.symmetric(
@@ -1707,7 +1717,7 @@ class _ManualEntryState extends State<_ManualEntry> {
               style: TextStyle(
                 color: _recipientMuted,
                 fontSize: 18,
-                fontWeight: FontWeight.w400,
+                fontWeight: FontWeight.w500,
                 letterSpacing: -.45,
               ),
             ),
@@ -1736,7 +1746,7 @@ class _ManualEntryState extends State<_ManualEntry> {
                     ? Colors.white
                     : const Color(0xFF9C9C9C),
                 fontSize: 23,
-                fontWeight: FontWeight.w400,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ),
@@ -1765,7 +1775,7 @@ class _ManualEntryState extends State<_ManualEntry> {
                             fontSize: 22,
                             fontWeight: _tabIndex == index
                                 ? FontWeight.w500
-                                : FontWeight.w400,
+                                : FontWeight.w500,
                           ),
                         ),
                         const SizedBox(height: 18),
@@ -1847,14 +1857,14 @@ class _ManualEntryState extends State<_ManualEntry> {
                     style: const TextStyle(
                       color: _ink,
                       fontSize: 22,
-                      fontWeight: FontWeight.w400,
+                      fontWeight: FontWeight.w500,
                     ),
                     decoration: InputDecoration(
                       hintText: '이름 또는 별칭',
                       hintStyle: const TextStyle(
                         color: Color(0xFF858585),
                         fontSize: 25,
-                        fontWeight: FontWeight.w400,
+                        fontWeight: FontWeight.w500,
                         letterSpacing: -.5,
                       ),
                       contentPadding: const EdgeInsets.fromLTRB(25, 0, 13, 0),
@@ -1922,7 +1932,7 @@ class _ManualEntryState extends State<_ManualEntry> {
                 '삭제하기',
                 style: TextStyle(
                   fontSize: 20,
-                  fontWeight: FontWeight.w400,
+                  fontWeight: FontWeight.w500,
                   decoration: TextDecoration.underline,
                   decorationThickness: 1,
                 ),
@@ -1963,7 +1973,7 @@ class _ManualEntryState extends State<_ManualEntry> {
                     color: _ink,
                     fontSize: _tabIndex == 1 ? 30 : 27,
                     fontWeight: _tabIndex == 1
-                        ? FontWeight.w400
+                        ? FontWeight.w500
                         : FontWeight.w600,
                     letterSpacing: -1,
                   ),
@@ -2018,7 +2028,7 @@ class _FavoriteRegistrationLink extends StatelessWidget {
             style: TextStyle(
               color: _ink,
               fontSize: 22,
-              fontWeight: FontWeight.w400,
+              fontWeight: FontWeight.w500,
               letterSpacing: -.25,
             ),
           ),
@@ -2067,7 +2077,7 @@ class _FavoriteImportHint extends StatelessWidget {
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 18,
-                      fontWeight: FontWeight.w400,
+                      fontWeight: FontWeight.w500,
                       letterSpacing: -.55,
                     ),
                   ),
@@ -2227,7 +2237,7 @@ class _AmountPage extends StatelessWidget {
                   style: const TextStyle(
                     color: Color(0xFF999999),
                     fontSize: 19,
-                    fontWeight: FontWeight.w400,
+                    fontWeight: FontWeight.w500,
                     letterSpacing: -.4,
                   ),
                 ),
@@ -2314,7 +2324,7 @@ class _TransferRecipientIdentity extends StatelessWidget {
           style: const TextStyle(
             color: Color(0xFF999999),
             fontSize: 20,
-            fontWeight: FontWeight.w400,
+            fontWeight: FontWeight.w500,
             decoration: TextDecoration.underline,
             decorationColor: Color(0xFF999999),
             decorationThickness: 1,
@@ -2609,7 +2619,7 @@ class _AmountSourceCard extends StatelessWidget {
                 ),
                 child: const Text(
                   '한도제한',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                 ),
               ),
               const SizedBox(width: 4),
@@ -2622,7 +2632,7 @@ class _AmountSourceCard extends StatelessWidget {
                   style: const TextStyle(
                     color: Color(0xFF737373),
                     fontSize: 20,
-                    fontWeight: FontWeight.w400,
+                    fontWeight: FontWeight.w500,
                     letterSpacing: -.7,
                   ),
                 ),
@@ -2635,7 +2645,7 @@ class _AmountSourceCard extends StatelessWidget {
                   fontSize: 20,
                   fontWeight: emphasizeAmount
                       ? FontWeight.w500
-                      : FontWeight.w400,
+                      : FontWeight.w500,
                 ),
               ),
               const SizedBox(width: 6),
@@ -3040,7 +3050,7 @@ class _BankSelectorDialogState extends State<_BankSelectorDialog> {
                                                 icon: const Icon(
                                                   Icons.close_rounded,
                                                   size: 35,
-                                                  weight: 400,
+                                                  weight: 500,
                                                 ),
                                               ),
                                             ],
@@ -3489,7 +3499,7 @@ class _TransferConfirmationRow extends StatelessWidget {
           style: const TextStyle(
             color: Color(0xFF666666),
             fontSize: 20,
-            fontWeight: FontWeight.w400,
+            fontWeight: FontWeight.w500,
             letterSpacing: -.45,
           ),
         ),
@@ -3518,7 +3528,7 @@ class _TransferConfirmationRow extends StatelessWidget {
                       color: mutedValue ? const Color(0xFFB8B8B8) : valueColor,
                       fontSize: 20,
                       height: 1.35,
-                      fontWeight: FontWeight.w400,
+                      fontWeight: FontWeight.w500,
                       letterSpacing: .4,
                     ),
                   ),
@@ -3586,7 +3596,7 @@ class _TransferPinMismatchBackdrop extends StatelessWidget {
                 style: const TextStyle(
                   color: Color(0xFF999999),
                   fontSize: 19,
-                  fontWeight: FontWeight.w400,
+                  fontWeight: FontWeight.w500,
                   letterSpacing: -.4,
                 ),
               ),
@@ -3681,7 +3691,7 @@ class _TransferPinPage extends StatelessWidget {
                     title.endsWith('입력') ? title : '$title 입력',
                     style: const TextStyle(
                       fontSize: 27,
-                      fontWeight: FontWeight.w400,
+                      fontWeight: FontWeight.w500,
                       letterSpacing: -.9,
                     ),
                   ),
@@ -3706,9 +3716,32 @@ class _TransferPinPage extends StatelessWidget {
                     style: const TextStyle(
                       color: Color(0xFF777777),
                       fontSize: 20,
-                      fontWeight: FontWeight.w400,
+                      fontWeight: FontWeight.w500,
                       letterSpacing: -.35,
                     ),
+                  ),
+                ),
+                Positioned(
+                  key: const Key('transfer-pin-indicators'),
+                  left: 0,
+                  right: 0,
+                  top: 198,
+                  height: 28,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      for (var index = 0; index < enteredDigits; index++) ...[
+                        if (index > 0) const SizedBox(width: 5),
+                        DecoratedBox(
+                          key: Key('transfer-pin-indicator-$index'),
+                          decoration: const BoxDecoration(
+                            color: _green,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const SizedBox.square(dimension: 28),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
                 if (errorMessage case final message?)
@@ -3872,7 +3905,7 @@ class _PinKeypad extends StatelessWidget {
                             'OK',
                             style: TextStyle(
                               fontSize: 28,
-                              fontWeight: FontWeight.w400,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
                         ),
@@ -3910,7 +3943,7 @@ class _PinDigitKey extends StatelessWidget {
     ),
     child: Text(
       value,
-      style: const TextStyle(fontSize: 35, fontWeight: FontWeight.w400),
+      style: const TextStyle(fontSize: 35, fontWeight: FontWeight.w500),
     ),
   );
 }
@@ -3984,7 +4017,7 @@ class _TransferWarningPopup extends StatelessWidget {
                           color: Color(0xFF1D1D1D),
                           fontSize: 20,
                           height: 1.55,
-                          fontWeight: FontWeight.w400,
+                          fontWeight: FontWeight.w500,
                           letterSpacing: .8,
                         ),
                       ),
@@ -4013,7 +4046,7 @@ class _TransferWarningPopup extends StatelessWidget {
                                   '취소',
                                   style: TextStyle(
                                     fontSize: 22,
-                                    fontWeight: FontWeight.w400,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
                               ),
@@ -4038,7 +4071,7 @@ class _TransferWarningPopup extends StatelessWidget {
                                   '확인',
                                   style: TextStyle(
                                     fontSize: 22,
-                                    fontWeight: FontWeight.w400,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
                               ),
@@ -4074,7 +4107,7 @@ class _TransferPinMismatchPopup extends StatelessWidget {
       color: Color(0xFF252525),
       fontSize: 20,
       height: 1.62,
-      fontWeight: FontWeight.w400,
+      fontWeight: FontWeight.w500,
       fontFamily: 'NotoSansKR',
       letterSpacing: -.45,
     );
@@ -4142,7 +4175,7 @@ class _TransferPinMismatchPopup extends StatelessWidget {
                           color: Color(0xFFE31624),
                           fontSize: 19,
                           height: 1.47,
-                          fontWeight: FontWeight.w400,
+                          fontWeight: FontWeight.w500,
                           letterSpacing: -.2,
                         ),
                       ),
@@ -4167,7 +4200,7 @@ class _TransferPinMismatchPopup extends StatelessWidget {
                                 style: TextStyle(
                                   color: Color(0xFF929292),
                                   fontSize: 17.5,
-                                  fontWeight: FontWeight.w400,
+                                  fontWeight: FontWeight.w500,
                                   letterSpacing: -.45,
                                 ),
                               ),
@@ -4231,7 +4264,7 @@ class _UnderlinedContact extends StatelessWidget {
     style: const TextStyle(
       color: Color(0xFF929292),
       fontSize: 17.5,
-      fontWeight: FontWeight.w400,
+      fontWeight: FontWeight.w500,
       letterSpacing: -.35,
       decoration: TextDecoration.underline,
       decorationColor: Color(0xFF929292),
@@ -4312,7 +4345,7 @@ class _TransferFailurePopup extends StatelessWidget {
                               color: Color(0xFF111111),
                               fontSize: 18,
                               height: 1.3,
-                              fontWeight: FontWeight.w400,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
                         ],
@@ -4332,7 +4365,7 @@ class _TransferFailurePopup extends StatelessWidget {
                           color: Color(0xFF252525),
                           fontSize: 17.5,
                           height: 1.55,
-                          fontWeight: FontWeight.w400,
+                          fontWeight: FontWeight.w500,
                           letterSpacing: -.35,
                         ),
                       ),
@@ -4351,7 +4384,7 @@ class _TransferFailurePopup extends StatelessWidget {
                           color: Color(0xFF252525),
                           fontSize: 17.5,
                           height: 1.55,
-                          fontWeight: FontWeight.w400,
+                          fontWeight: FontWeight.w500,
                           letterSpacing: -.35,
                         ),
                       ),
@@ -4374,7 +4407,7 @@ class _TransferFailurePopup extends StatelessWidget {
                           '확인',
                           style: TextStyle(
                             fontSize: 20,
-                            fontWeight: FontWeight.w400,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ),

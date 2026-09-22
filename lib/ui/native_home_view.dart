@@ -265,7 +265,7 @@ class _HomeScale extends InheritedWidget {
 TextStyle _style(
   BuildContext context,
   double size, {
-  FontWeight weight = FontWeight.w400,
+  FontWeight weight = FontWeight.w500,
   Color color = _ink,
   double? height,
   double letterSpacing = -0.35,
@@ -278,7 +278,7 @@ TextStyle _style(
       : null;
   return TextStyle(
     fontSize: size * scale,
-    fontWeight: variableWeight == null ? weight : FontWeight.w400,
+    fontWeight: variableWeight == null ? weight : FontWeight.w500,
     fontVariations: variableWeight == null
         ? null
         : [FontVariation('wght', variableWeight)],
@@ -496,7 +496,7 @@ class _FortuneChip extends StatelessWidget {
                   style: _style(
                     context,
                     16,
-                    weight: FontWeight.w400,
+                    weight: FontWeight.w500,
                     color: Colors.white,
                     height: 1,
                     letterSpacing: -0.15,
@@ -563,7 +563,7 @@ class _EventBanner extends StatelessWidget {
                     style: _style(
                       context,
                       20,
-                      weight: FontWeight.w400,
+                      weight: FontWeight.w500,
                       color: const Color(0xFF485762),
                       height: 1,
                     ),
@@ -664,7 +664,7 @@ class _FinanceTabs extends StatelessWidget {
                 style: _style(
                   context,
                   24,
-                  weight: nhSelected ? FontWeight.w400 : FontWeight.w700,
+                  weight: nhSelected ? FontWeight.w500 : FontWeight.w700,
                   color: nhSelected ? const Color(0xFF696F71) : _ink,
                   letterSpacing: -0.7,
                 ),
@@ -789,7 +789,7 @@ class _AccountCard extends StatelessWidget {
                                     style: _style(
                                       context,
                                       20,
-                                      weight: FontWeight.w400,
+                                      weight: FontWeight.w500,
                                       color: const Color(0xFF62696B),
                                       letterSpacing: -0.45,
                                     ),
@@ -849,16 +849,17 @@ class _AccountCard extends StatelessWidget {
                   SizedBox(height: 10 * scale),
                   Padding(
                     padding: EdgeInsets.only(left: 58 * scale),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        SizedBox(width: 2 * scale),
-                        Transform.scale(
-                          scaleX: 1.095,
-                          scaleY: 0.95,
-                          alignment: Alignment.centerLeft,
-                          child: Text(
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Row(
+                        key: const Key('home-balance-and-visibility'),
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          SizedBox(width: 2 * scale),
+                          Text(
                             balanceLabel,
+                            key: const Key('home-account-balance'),
                             style: _style(
                               context,
                               29,
@@ -866,34 +867,35 @@ class _AccountCard extends StatelessWidget {
                               letterSpacing: -0.9,
                             ),
                           ),
-                        ),
-                        SizedBox(width: 9 * scale),
-                        GestureDetector(
-                          onTap: onToggleHide,
-                          child: Container(
-                            width: 62 * scale,
-                            height: 38 * scale,
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              border: Border.all(
-                                color: const Color(0xFFD7D9DA),
-                                width: 1 * scale,
+                          SizedBox(width: 10 * scale),
+                          GestureDetector(
+                            onTap: onToggleHide,
+                            child: Container(
+                              key: const Key('home-balance-visibility'),
+                              width: 62 * scale,
+                              height: 38 * scale,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                border: Border.all(
+                                  color: const Color(0xFFD7D9DA),
+                                  width: 1 * scale,
+                                ),
+                                borderRadius: BorderRadius.circular(18 * scale),
                               ),
-                              borderRadius: BorderRadius.circular(18 * scale),
-                            ),
-                            child: Text(
-                              hideAmounts ? '보기' : '숨김',
-                              style: _style(
-                                context,
-                                15,
-                                weight: FontWeight.w600,
-                                color: _ink,
+                              child: Text(
+                                hideAmounts ? '보기' : '숨김',
+                                style: _style(
+                                  context,
+                                  15,
+                                  weight: FontWeight.w600,
+                                  color: _ink,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                   const Spacer(),
@@ -1025,7 +1027,7 @@ class _TljBanner extends StatelessWidget {
                     style: _style(
                       context,
                       17,
-                      weight: FontWeight.w400,
+                      weight: FontWeight.w500,
                       color: const Color(0xFF747A7B),
                     ),
                   ),
@@ -1531,7 +1533,7 @@ class _MoimBanner extends StatelessWidget {
                 style: _style(
                   context,
                   17,
-                  weight: FontWeight.w400,
+                  weight: FontWeight.w500,
                   color: const Color(0xFF66626D),
                 ),
               ),
@@ -1662,7 +1664,7 @@ class _DataSectionHeading extends StatelessWidget {
                   style: _style(
                     context,
                     16,
-                    weight: FontWeight.w400,
+                    weight: FontWeight.w500,
                     color: const Color(0xFF747A7C),
                     letterSpacing: -0.2,
                   ),
@@ -1900,7 +1902,7 @@ class _AssetRow extends StatelessWidget {
             style: _style(
               context,
               mutedValue ? 20 : 19,
-              weight: mutedValue ? FontWeight.w400 : FontWeight.w500,
+              weight: mutedValue ? FontWeight.w500 : FontWeight.w500,
               color: mutedValue ? const Color(0xFF656B6D) : _ink,
             ),
           ),
@@ -2114,7 +2116,7 @@ class _GroupGrid extends StatelessWidget {
                     style: _style(
                       context,
                       18,
-                      weight: FontWeight.w400,
+                      weight: FontWeight.w500,
                       color: const Color(0xFF555B5D),
                       height: 1.5,
                     ),
@@ -2303,7 +2305,7 @@ class _NavItem extends StatelessWidget {
                 style: _style(
                   context,
                   15,
-                  weight: selected ? FontWeight.w500 : FontWeight.w400,
+                  weight: selected ? FontWeight.w500 : FontWeight.w500,
                   color: color,
                   height: 0.8,
                   letterSpacing: -0.35,

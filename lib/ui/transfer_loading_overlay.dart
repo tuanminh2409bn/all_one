@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import 'design_canvas.dart';
+
 const transferHomeToRecipientLoadingDuration = Duration(milliseconds: 400);
 const transferHomeToRecipientScreenSwitchDelay = Duration(milliseconds: 233);
 const transferPinAcceptedLoadingDuration = Duration(milliseconds: 1000);
@@ -72,29 +74,37 @@ class _TransferLoadingOverlayState extends State<TransferLoadingOverlay>
 
   @override
   Widget build(BuildContext context) => Stack(
+    fit: StackFit.expand,
     children: [
-      Positioned.fill(
-        child: ModalBarrier(
-          key: const Key('transfer-loading-scrim'),
-          color: _scrimVisible ? const Color(0x7E000000) : Colors.transparent,
-          dismissible: false,
-          semanticsLabel: '처리 중',
-        ),
+      ModalBarrier(
+        key: const Key('transfer-loading-scrim'),
+        color: _scrimVisible ? const Color(0x7E000000) : Colors.transparent,
+        dismissible: false,
+        semanticsLabel: '처리 중',
       ),
-      Positioned(
-        key: const Key('transfer-loading-logo'),
-        left: 234,
-        top: 581,
-        width: 120,
-        height: 120,
-        child: RepaintBoundary(
-          child: Image.asset(
-            'assets/images/loading_original.png',
-            key: ValueKey<Object>(widget.playbackKey),
-            fit: BoxFit.contain,
-            filterQuality: FilterQuality.high,
-            gaplessPlayback: true,
-            excludeFromSemantics: true,
+      IgnorePointer(
+        child: DesignCanvas(
+          backgroundColor: Colors.transparent,
+          child: Stack(
+            children: [
+              Positioned(
+                key: const Key('transfer-loading-logo'),
+                left: 234,
+                top: 581,
+                width: 120,
+                height: 120,
+                child: RepaintBoundary(
+                  child: Image.asset(
+                    'assets/images/loading_original.png',
+                    key: ValueKey<Object>(widget.playbackKey),
+                    fit: BoxFit.contain,
+                    filterQuality: FilterQuality.high,
+                    gaplessPlayback: true,
+                    excludeFromSemantics: true,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

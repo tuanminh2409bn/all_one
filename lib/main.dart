@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import 'core/auth_service.dart';
 import 'core/data_bootstrap.dart';
+import 'ui/app_theme.dart';
 import 'ui/design_canvas.dart';
 import 'ui/splash_screen.dart';
 
@@ -26,21 +27,7 @@ class AllOneApp extends StatelessWidget {
     return MaterialApp(
       title: 'NH올원뱅크',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        scaffoldBackgroundColor: Colors.white,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF1AA35A),
-          primary: const Color(0xFF1AA35A),
-        ),
-        fontFamily: 'NotoSansKR',
-        fontFamilyFallback: const [
-          'Apple SD Gothic Neo',
-          'Noto Sans KR',
-          'Noto Sans',
-          'Roboto',
-        ],
-      ),
+      theme: buildAllOneTheme(),
       home: SplashScreen(auth: auth),
     );
   }

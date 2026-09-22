@@ -1,6 +1,6 @@
 # all_one — project handoff
 
-Last updated: 2026-09-18 (Asia/Ho_Chi_Minh)
+Last updated: 2026-09-22 (Asia/Ho_Chi_Minh)
 
 This is the persistent starting context for a new development session. Read it after `AGENTS.md`. It records the current state and decisions; source code remains authoritative if the two differ.
 
@@ -70,7 +70,7 @@ Native platform launch
 - The header, event banner, finance tabs/account card, 40% banner, benefits, shortcuts, group banner, spending/assets sections, lifestyle cards, NH group grid, fixed bottom navigation, and floating asset button reproduce mockups 1–5.
 - Header globe, bell, search, and large-text toggle are aligned with the login/name row.
 - Home's normal typography renders at the reference scale (`1.0`); only the user-controlled large-text mode applies the `1.13` multiplier. Common header, account-card, section, floating-action, and bottom-navigation text bounds were remeasured against the supplied original screenshot.
-- The bundled variable Noto Sans KR font uses explicit `wght` axes for intermediate `w500`/`w600` styles so Flutter does not substitute the registered 700 face for semibold or medium Home copy.
+- The bundled variable Noto Sans KR font defaults to Medium (`w500`) and uses explicit `wght` axes for intermediate `w500`/`w600` styles so iOS and Android render normal copy consistently without substituting the registered 700 face.
 - The daily-benefit hand/coin row and purple group banner artwork use mockup-derived assets.
 - Large text uses a `1.13` multiplier over the normal Home text scale. The account card grows from 326 to 342 design pixels in large-text mode so the three action buttons do not overflow.
 - Header and bottom navigation remain fixed while Home content scrolls. Header search jumps to the benefits section.
@@ -273,6 +273,17 @@ flutter build apk --debug
   - Final transfer confirmation → result runs for 1400 ms over the populated confirmation page with the scrim active from the first frame. Each playback evicts the APNG image cache so the animation restarts at frame zero.
   - Widget coverage asserts all four phases, timing boundaries, scrim changes, backdrop changes, asset identity, position, and size. Reviewed checkpoints are `preview_11k` through `preview_11n`; the frame-level original/current sheet is `build/comparisons/four_transfer_loadings_video_vs_app.png`.
   - Full `test/widget_test.dart` passed 22 tests. The focused four-loading golden and existing warning/confirmation golden tests pass. The full historical golden file still has only its existing nondeterministic Korean `취소` antialias deltas (0.03–0.04%, 198–294 pixels) when all cases run in one process. `flutter analyze` reports only the pre-existing Flutter 3.47 `ReorderableListView.onReorder` deprecation info in `data_management_screen.dart`.
+- Cross-platform typography and layout correction on 2026-09-22:
+  - Corrected the bundled `NotoSansKR.ttf` variable-font `wght` default from Thin (`100`) and later raised it from Regular (`400`) to Medium (`500`). The app registers this face as `w500`, so normal copy now renders consistently and less faintly on both iOS and Android while the existing semibold/bold hierarchy remains intact.
+  - Removed non-uniform paint-only scaling from transaction-history text and replaced it with native font sizes/line heights. Timestamps and left-column values no longer render vertically compressed on iOS, and account identity copy stays inside its fixed header without overflow.
+  - The Home balance and visibility pill now form a content-sized row: the pill follows the final balance digit as longer values expand to the right while preserving the mockup's fixed 10-design-pixel gap. The add/edit-recipient dialog is scrollable when the software keyboard reduces the available height, eliminating the reported bottom overflow.
+  - Transfer-PIN entry displays one centered green indicator for each entered digit, up to four indicators, matching the original popup while keeping the secure PIN value out of the widget tree and logs.
+  - Added the reviewed two-digit checkpoint `preview_11f1_transfer_pin_2_digits.png`; the complete widget/PIN suite passes 31 tests and the regenerated golden suite passes all 11 scenarios independently. `flutter analyze --no-pub` reports only the existing `ReorderableListView.onReorder` deprecation info.
+  - Follow-up device screenshots showed that several Home, transaction-history, and transfer styles still explicitly requested `w400`, bypassing the new Medium default. Those overrides now use `w500`; the shared app theme and design canvas also enforce `w500` as the minimum normal-copy weight while preserving `w600`/`w700` emphasis.
+  - A complete `lib/` audit removed the final `w400` references, including the bank-picker close icon and the theme fallback. `test/typography_policy_test.dart` now scans production Dart sources and fails if any text or weighted icon requests `100`–`400`, so all screens remain at `w500` or above. The full 65-test suite passes.
+  - Transfer failures now propagate through both entry routes. In particular, Home captures the failed result returned through `AccountDetailsScreen`, so `Home → 거래내역 → 이체 → 이체확인` returns Home and opens the NH6901 popup just like the direct Home transfer route. A dedicated widget regression test covers this route.
+  - Regenerated all affected golden checkpoints after visual review. `flutter test --concurrency=1` passed all 60 tests, including new regression checks for the font axis, Home balance spacing, transaction timestamp proportions, and keyboard-constrained recipient editor. `flutter analyze` reports only the pre-existing `ReorderableListView.onReorder` deprecation info.
+  - iOS Simulator and Android debug smoke builds were explicitly stopped at the user's request. Flutter's automatic UIScene migration was fully reverted, Android Gradle configuration remained unchanged, and no platform build process was left running.
 
 ## Known limits and next-session checklist
 

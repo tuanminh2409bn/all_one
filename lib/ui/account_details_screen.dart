@@ -459,18 +459,15 @@ class _DetailsHeader extends StatelessWidget {
             left: 135,
             right: 135,
             top: 6,
-            child: Transform.scale(
-              scaleX: 0.925,
-              child: const Text(
-                '거래내역조회',
-                key: Key('account-details-title'),
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: _detailsInk,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -1,
-                ),
+            child: const Text(
+              '거래내역조회',
+              key: Key('account-details-title'),
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: _detailsInk,
+                fontSize: 22.5,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -1,
               ),
             ),
           ),
@@ -545,44 +542,36 @@ class _AccountIdentity extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Transform.scale(
-                  scaleX: 1.004,
-                  scaleY: 0.98,
-                  alignment: Alignment.centerLeft,
-                  child: Transform.translate(
-                    offset: const Offset(0, -1.1),
-                    child: Text(
-                      key: const Key('account-type-text'),
-                      accountType,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: _detailsInk,
-                        fontSize: 23,
-                        fontWeight: FontWeight.w400,
-                        letterSpacing: -1,
-                      ),
+                Transform.translate(
+                  offset: const Offset(0, -1.1),
+                  child: Text(
+                    key: const Key('account-type-text'),
+                    accountType,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: _detailsInk,
+                      fontSize: 22.5,
+                      fontWeight: FontWeight.w500,
+                      height: 1.1,
+                      letterSpacing: -1,
                     ),
                   ),
                 ),
                 const SizedBox(height: 2),
                 Transform.translate(
                   offset: const Offset(0, -0.4),
-                  child: Transform.scale(
-                    scaleX: 1.109,
-                    scaleY: 1.126,
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      key: const Key('account-number-text'),
-                      '$bank $number',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: _detailsMuted,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w400,
-                        letterSpacing: -0.55,
-                      ),
+                  child: Text(
+                    key: const Key('account-number-text'),
+                    '$bank $number',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: _detailsMuted,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w500,
+                      height: 1.1,
+                      letterSpacing: -0.65,
                     ),
                   ),
                 ),
@@ -626,35 +615,27 @@ class _AccountSummary extends StatelessWidget {
         Positioned(
           left: 42,
           top: 307.2,
-          child: Transform.scale(
-            scaleX: 0.975,
-            alignment: Alignment.centerLeft,
-            child: const Text(
-              '잔액',
-              style: TextStyle(
-                color: _detailsSecondary,
-                fontSize: 20,
-                fontWeight: FontWeight.w400,
-                letterSpacing: -0.6,
-              ),
+          child: const Text(
+            '잔액',
+            style: TextStyle(
+              color: _detailsSecondary,
+              fontSize: 19.5,
+              fontWeight: FontWeight.w500,
+              letterSpacing: -0.6,
             ),
           ),
         ),
         Positioned(
           right: 41.5,
           top: 300.5,
-          child: Transform.scale(
-            scaleX: 1.055,
-            alignment: Alignment.centerRight,
-            child: Text(
-              key: const Key('account-balance-text'),
-              '${_formatDetailsMoney(balance)}원',
-              style: const TextStyle(
-                color: _detailsInk,
-                fontSize: 28,
-                fontWeight: FontWeight.w400,
-                letterSpacing: -1.1,
-              ),
+          child: Text(
+            key: const Key('account-balance-text'),
+            '${_formatDetailsMoney(balance)}원',
+            style: const TextStyle(
+              color: _detailsInk,
+              fontSize: 29,
+              fontWeight: FontWeight.w500,
+              letterSpacing: -1.1,
             ),
           ),
         ),
@@ -718,15 +699,12 @@ class _AccountActionButton extends StatelessWidget {
         ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
-      child: Transform.scale(
-        scaleX: accent ? 1.03 : 1,
-        child: Text(
-          label,
-          style: const TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.w400,
-            letterSpacing: -0.8,
-          ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 22,
+          fontWeight: FontWeight.w500,
+          letterSpacing: -0.8,
         ),
       ),
     );
@@ -781,19 +759,14 @@ class _TransactionList extends StatelessWidget {
         Positioned(
           left: 35,
           top: 751.3,
-          child: Transform.scale(
-            scaleX: 1.06,
-            scaleY: 0.92,
-            alignment: Alignment.centerLeft,
-            child: Text(
-              key: const Key('account-history-range'),
-              rangeLabel,
-              style: const TextStyle(
-                color: _detailsSecondary,
-                fontSize: 19.5,
-                fontWeight: FontWeight.w400,
-                letterSpacing: -0.55,
-              ),
+          child: Text(
+            key: const Key('account-history-range'),
+            rangeLabel,
+            style: const TextStyle(
+              color: _detailsSecondary,
+              fontSize: 18.5,
+              fontWeight: FontWeight.w500,
+              letterSpacing: -0.55,
             ),
           ),
         ),
@@ -887,7 +860,7 @@ class _BalanceVisibilityToggle extends StatelessWidget {
               style: const TextStyle(
                 color: _detailsInk,
                 fontSize: 19,
-                fontWeight: FontWeight.w400,
+                fontWeight: FontWeight.w500,
                 letterSpacing: -0.7,
               ),
             ),
@@ -976,17 +949,13 @@ class _FilterBar extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Transform.scale(
-                      scaleX: 0.928,
-                      alignment: Alignment.centerRight,
-                      child: Text(
-                        label,
-                        style: const TextStyle(
-                          color: Color(0xFF444849),
-                          fontSize: 19,
-                          fontWeight: FontWeight.w400,
-                          letterSpacing: -0.7,
-                        ),
+                    Text(
+                      label,
+                      style: const TextStyle(
+                        color: Color(0xFF444849),
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: -0.7,
                       ),
                     ),
                     const SizedBox(width: 15),
@@ -1134,7 +1103,7 @@ class _HistoryFilterSheetState extends State<_HistoryFilterSheet> {
                   color: _detailsInk,
                   fontSize: 20,
                   height: 1.7,
-                  fontWeight: FontWeight.w400,
+                  fontWeight: FontWeight.w500,
                   letterSpacing: -0.6,
                 ),
               ),
@@ -1661,7 +1630,7 @@ class _FilterChoiceButton extends StatelessWidget {
               color: selected ? _detailsGreen : _detailsInk,
               fontSize: 20 * unit,
               height: 1.25,
-              fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
+              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
             ),
           ),
         ),
@@ -1903,7 +1872,7 @@ class _MonthPickerSheetState extends State<_MonthPickerSheet> {
                                       fontSize: u(24),
                                       fontWeight: value == _year
                                           ? FontWeight.w500
-                                          : FontWeight.w400,
+                                          : FontWeight.w500,
                                     ),
                                   ),
                                 );
@@ -1936,7 +1905,7 @@ class _MonthPickerSheetState extends State<_MonthPickerSheet> {
                                       fontSize: u(24),
                                       fontWeight: value == _month
                                           ? FontWeight.w500
-                                          : FontWeight.w400,
+                                          : FontWeight.w500,
                                     ),
                                   ),
                                 );
@@ -2022,78 +1991,62 @@ class _TransactionRow extends StatelessWidget {
             top: 36,
             width: 320,
             height: 36,
-            child: Transform.scale(
-              scaleX: 1.065,
-              alignment: Alignment.centerLeft,
-              child: Text(
-                title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: _detailsInk,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w400,
-                  letterSpacing: -0.8,
-                ),
+            child: Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: _detailsInk,
+                fontSize: 24,
+                fontWeight: FontWeight.w500,
+                letterSpacing: -0.8,
               ),
             ),
           ),
           Positioned(
             right: 5,
             top: positive ? 3 : 5.1,
-            child: Transform.scale(
-              scaleX: 1.08,
-              scaleY: positive ? 1.2 : 0.9,
-              alignment: Alignment.centerRight,
-              child: Text(
-                positive ? '입금' : '출금',
-                style: TextStyle(
-                  color: positive
-                      ? const Color(0xFF1976D2)
-                      : const Color(0xFFEF4D4F),
-                  fontSize: 19,
-                  fontWeight: FontWeight.w400,
-                  letterSpacing: -0.6,
-                ),
+            child: Text(
+              positive ? '입금' : '출금',
+              style: TextStyle(
+                color: positive
+                    ? const Color(0xFF1976D2)
+                    : const Color(0xFFEF4D4F),
+                fontSize: 19,
+                fontWeight: FontWeight.w500,
+                letterSpacing: -0.6,
               ),
             ),
           ),
           Positioned(
             left: 0,
             top: dateTime.contains('|') ? 1.25 : 1,
-            child: Transform.scale(
-              scaleX: 1.059,
-              scaleY: dateTime.contains('|') ? 0.73 : 0.9,
-              alignment: Alignment.centerLeft,
-              child: Text(
-                key: Key('account-transaction-time-$transactionId'),
-                dateTime,
-                style: const TextStyle(
-                  color: _detailsSecondary,
-                  fontSize: 19.5,
-                  fontWeight: FontWeight.w400,
-                  letterSpacing: -0.5,
-                ),
+            width: 340,
+            child: Text(
+              key: Key('account-transaction-time-$transactionId'),
+              dateTime,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: _detailsSecondary,
+                fontSize: 17,
+                fontWeight: FontWeight.w500,
+                letterSpacing: -0.4,
               ),
             ),
           ),
           Positioned(
             right: 0,
             top: positive ? 36.7 : 33.4,
-            child: Transform.scale(
-              scaleX: 1.121,
-              scaleY: positive ? 1.1 : 1.08,
-              alignment: Alignment.centerRight,
-              child: Text(
-                amount,
-                style: TextStyle(
-                  color: positive
-                      ? const Color(0xFF1976D2)
-                      : const Color(0xFFEF4D4F),
-                  fontSize: 26,
-                  fontWeight: FontWeight.w400,
-                  letterSpacing: -0.8,
-                ),
+            child: Text(
+              amount,
+              style: TextStyle(
+                color: positive
+                    ? const Color(0xFF1976D2)
+                    : const Color(0xFFEF4D4F),
+                fontSize: 28,
+                fontWeight: FontWeight.w500,
+                letterSpacing: -0.8,
               ),
             ),
           ),
@@ -2101,19 +2054,14 @@ class _TransactionRow extends StatelessWidget {
             Positioned(
               right: 0,
               top: positive ? 77.9 : 79,
-              child: Transform.scale(
-                scaleX: positive ? 1.176 : 1.12,
-                scaleY: 1.05,
-                alignment: Alignment.centerRight,
-                child: Text(
-                  key: Key('account-transaction-balance-$transactionId'),
-                  '잔액 $balance',
-                  style: const TextStyle(
-                    color: _detailsMuted,
-                    fontSize: 18.5,
-                    fontWeight: FontWeight.w400,
-                    letterSpacing: -0.5,
-                  ),
+              child: Text(
+                key: Key('account-transaction-balance-$transactionId'),
+                '잔액 $balance',
+                style: const TextStyle(
+                  color: _detailsMuted,
+                  fontSize: 19.5,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: -0.5,
                 ),
               ),
             ),

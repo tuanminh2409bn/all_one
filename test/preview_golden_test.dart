@@ -7,6 +7,7 @@ import 'package:all_one/ui/home_screen.dart';
 import 'package:all_one/ui/limit_release_screen.dart';
 import 'package:all_one/ui/native_home_view.dart';
 import 'package:all_one/ui/account_details_screen.dart';
+import 'package:all_one/ui/app_theme.dart';
 import 'package:all_one/ui/pin_screen.dart';
 import 'package:all_one/ui/splash_screen.dart';
 import 'package:all_one/ui/transfer_recipient_screen.dart';
@@ -495,6 +496,7 @@ void main() {
         TransferRecipientScreen(
           key: const ValueKey('transfer-saved-recipient-flow'),
           dataStore: store,
+          auth: _VerifiedTransferAuth(),
           initialPinKeys: const [
             '1',
             '2',
@@ -543,7 +545,20 @@ void main() {
       matchesGoldenFile('goldens/preview_11f_transfer_pin.png'),
     );
 
-    for (final digit in ['1', '2', '3', '4']) {
+    for (final digit in ['1', '2']) {
+      await tester.tap(find.byKey(Key('transfer-pin-key-$digit')));
+      await tester.pump();
+    }
+    await expectLater(
+      find.byType(Overlay).first,
+      matchesGoldenFile('goldens/preview_11f1_transfer_pin_2_digits.png'),
+    );
+    await tester.tap(find.byKey(const Key('transfer-pin-delete')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('transfer-pin-delete')));
+    await tester.pump();
+
+    for (final digit in ['9', '9', '9', '9']) {
       await tester.tap(find.byKey(Key('transfer-pin-key-$digit')));
       await tester.pump();
     }
@@ -896,16 +911,7 @@ Future<void> _pumpUntilGone(
 Widget _host(Widget home) {
   return MaterialApp(
     debugShowCheckedModeBanner: false,
-    theme: ThemeData(
-      useMaterial3: true,
-      fontFamily: 'NotoSansKR',
-      fontFamilyFallback: const [
-        'Apple SD Gothic Neo',
-        'Noto Sans KR',
-        'Noto Sans',
-        'Roboto',
-      ],
-    ),
+    theme: buildAllOneTheme(),
     home: home,
   );
 }
@@ -933,16 +939,7 @@ Widget _homeHost(Widget home) {
   return MaterialApp(
     key: ValueKey(home.key),
     debugShowCheckedModeBanner: false,
-    theme: ThemeData(
-      useMaterial3: true,
-      fontFamily: 'NotoSansKR',
-      fontFamilyFallback: const [
-        'Apple SD Gothic Neo',
-        'Noto Sans KR',
-        'Noto Sans',
-        'Roboto',
-      ],
-    ),
+    theme: buildAllOneTheme(),
     home: Builder(
       builder: (context) {
         final mediaQuery = MediaQuery.of(context);

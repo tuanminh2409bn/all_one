@@ -11,6 +11,7 @@ import 'package:all_one/core/bank_catalog.dart';
 import 'package:all_one/core/pin_security.dart';
 import 'package:all_one/ui/account_details_screen.dart';
 import 'package:all_one/ui/app_loading_transition.dart';
+import 'package:all_one/ui/app_theme.dart';
 import 'package:all_one/ui/bank_logo.dart';
 import 'package:all_one/ui/certificate_login_screen.dart';
 import 'package:all_one/ui/home_screen.dart';
@@ -46,6 +47,53 @@ void main() {
     expect(image.image, isA<ResizeImage>());
     expect(BankCatalog.logoAsset('신한'), endsWith('logo_shinhan.png'));
     expect(tester.getSize(find.byType(BankLogo)), const Size.square(50));
+  });
+
+  test(
+    'default Korean font uses medium weight 500 on every platform',
+    () async {
+      final data = await rootBundle.load('assets/fonts/NotoSansKR.ttf');
+      final tableCount = data.getUint16(4);
+      int? fvarOffset;
+      for (var index = 0; index < tableCount; index++) {
+        final recordOffset = 12 + (index * 16);
+        final tag = String.fromCharCodes([
+          for (var byte = 0; byte < 4; byte++)
+            data.getUint8(recordOffset + byte),
+        ]);
+        if (tag == 'fvar') {
+          fvarOffset = data.getUint32(recordOffset + 8);
+          break;
+        }
+      }
+      expect(fvarOffset, isNotNull);
+      final axesOffset = data.getUint16(fvarOffset! + 4);
+      final firstAxis = fvarOffset + axesOffset;
+      final axisTag = String.fromCharCodes([
+        for (var byte = 0; byte < 4; byte++) data.getUint8(firstAxis + byte),
+      ]);
+      final defaultWeight = data.getInt32(firstAxis + 8) / 65536;
+      expect(axisTag, 'wght');
+      expect(defaultWeight, 500);
+    },
+  );
+
+  test('app theme never renders normal copy below weight 500', () {
+    final theme = buildAllOneTheme();
+    final styles = <TextStyle?>[
+      theme.textTheme.bodyLarge,
+      theme.textTheme.bodyMedium,
+      theme.textTheme.bodySmall,
+      theme.textTheme.titleLarge,
+      theme.textTheme.titleMedium,
+      theme.textTheme.titleSmall,
+      theme.textTheme.labelLarge,
+      theme.textTheme.labelMedium,
+      theme.textTheme.labelSmall,
+    ];
+    for (final style in styles) {
+      expect(style?.fontWeight?.value, greaterThanOrEqualTo(500));
+    }
   });
 
   test(
@@ -358,6 +406,42 @@ void main() {
     );
   });
 
+  testWidgets('home visibility action follows the final balance digit', (
+    tester,
+  ) async {
+    _configureMockupViewport(tester);
+    final store = AppDataStore.inMemory();
+    addTearDown(store.dispose);
+    await store.saveAccountWithCurrentBalance(store.accounts.first, 0);
+    await tester.pumpWidget(
+      _TestHost(
+        home: HomeScreen(auth: AuthService(), dataStore: store),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final balanceRect = tester.getRect(
+      find.byKey(const Key('home-account-balance')),
+    );
+    final actionRect = tester.getRect(
+      find.byKey(const Key('home-balance-visibility')),
+    );
+    expect(actionRect.left - balanceRect.right, closeTo(10, 0.01));
+
+    await store.saveAccountWithCurrentBalance(store.accounts.first, 123456789);
+    await tester.pumpAndSettle();
+
+    final longBalanceRect = tester.getRect(
+      find.byKey(const Key('home-account-balance')),
+    );
+    final movedActionRect = tester.getRect(
+      find.byKey(const Key('home-balance-visibility')),
+    );
+    expect(longBalanceRect.left, balanceRect.left);
+    expect(movedActionRect.left, greaterThan(actionRect.left));
+    expect(movedActionRect.left - longBalanceRect.right, closeTo(10, 0.01));
+  });
+
   testWidgets('limit release action opens a fixed-header scrollable guide', (
     tester,
   ) async {
@@ -470,6 +554,62 @@ void main() {
     await tester.tap(find.byKey(const Key('account-back')));
     await tester.pumpAndSettle();
     expect(find.byType(HomeScreen), findsOneWidget);
+  });
+
+  testWidgets(
+    'transfer failure from transaction history is shown after returning home',
+    (tester) async {
+      _configureMockupViewport(tester);
+      final store = AppDataStore.inMemory();
+      addTearDown(store.dispose);
+      await tester.pumpWidget(
+        _TestHost(
+          home: HomeScreen(auth: AuthService(), dataStore: store),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(OutlinedButton, '거래내역'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('account-transfer')));
+      await tester.pumpAndSettle();
+      expect(find.byType(TransferRecipientScreen), findsOneWidget);
+
+      Navigator.of(
+        tester.element(find.byType(TransferRecipientScreen)),
+      ).pop(TransferFlowResult.failed);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(HomeScreen), findsOneWidget);
+      expect(find.byKey(const Key('transfer-failure-popup')), findsOneWidget);
+    },
+  );
+
+  testWidgets('transaction timestamps keep native glyph proportions', (
+    tester,
+  ) async {
+    _configureMockupViewport(tester);
+    final store = AppDataStore.inMemory();
+    addTearDown(store.dispose);
+    await tester.pumpWidget(
+      _TestHost(
+        home: AccountDetailsScreen(
+          auth: AuthService(),
+          dataStore: store,
+          accountId: 'default-account',
+          nowProvider: () => DateTime(2026, 8, 21),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final timestamp = find.byKey(
+      const Key('account-transaction-time-seed-transaction-0'),
+    );
+    expect(timestamp, findsOneWidget);
+    final text = tester.widget<Text>(timestamp);
+    expect(text.style?.fontSize, 17);
+    expect(text.style?.fontWeight, FontWeight.w500);
   });
 
   testWidgets('transaction history filter matches the reference flow', (
@@ -670,7 +810,7 @@ void main() {
         find.byKey(const Key('recipient-bank-account')),
       );
       expect(recipientBankAccount.style?.fontSize, 20);
-      expect(recipientBankAccount.style?.fontWeight, FontWeight.w400);
+      expect(recipientBankAccount.style?.fontWeight, FontWeight.w500);
       expect(recipientBankAccount.style?.color, const Color(0xFF999999));
       expect(
         tester
@@ -747,7 +887,7 @@ void main() {
     },
   );
 
-  testWidgets('saved recipient amount and PIN popup match the reference flow', (
+  testWidgets('signed-in wrong PIN attempts match the reference flow', (
     tester,
   ) async {
     const recipientGreen = Color(0xFF1F9A3F);
@@ -758,6 +898,7 @@ void main() {
     addTearDown(tester.view.resetViewPadding);
 
     final store = AppDataStore.inMemory(withMockData: false);
+    final auth = _CountingTransferAuth();
     addTearDown(store.dispose);
     await store.createAccount(
       bankCode: '농협',
@@ -777,6 +918,7 @@ void main() {
       _TestHost(
         home: TransferRecipientScreen(
           dataStore: store,
+          auth: auth,
           initialPinKeys: const [
             '1',
             '2',
@@ -853,13 +995,14 @@ void main() {
     expect(find.text('NH농협은행 302-2180-4371-91'), findsOneWidget);
     expect(find.byKey(const Key('transfer-pin-symbol-left')), findsOneWidget);
     expect(find.byKey(const Key('transfer-pin-symbol-right')), findsOneWidget);
+    expect(find.byKey(const Key('transfer-pin-indicator-0')), findsNothing);
     final pinTwoLabel = tester.widget<Text>(
       find.descendant(
         of: find.byKey(const Key('transfer-pin-key-2')),
         matching: find.text('2'),
       ),
     );
-    expect(pinTwoLabel.style?.fontWeight, FontWeight.w400);
+    expect(pinTwoLabel.style?.fontWeight, FontWeight.w500);
 
     final rearrangeCenter = tester.getCenter(
       find.byKey(const Key('transfer-pin-rearrange')),
@@ -920,9 +1063,38 @@ void main() {
       isTrue,
     );
 
-    for (final digit in ['1', '2', '3', '4']) {
-      await tester.tap(find.byKey(Key('transfer-pin-key-$digit')));
+    for (var index = 0; index < 4; index++) {
+      await tester.tap(find.byKey(const Key('transfer-pin-key-9')));
       await tester.pump();
+      for (var indicator = 0; indicator <= index; indicator++) {
+        expect(
+          find.byKey(Key('transfer-pin-indicator-$indicator')),
+          findsOneWidget,
+        );
+      }
+      expect(
+        find.byKey(Key('transfer-pin-indicator-${index + 1}')),
+        findsNothing,
+      );
+      if (index == 1) {
+        final firstIndicator = find.byKey(
+          const Key('transfer-pin-indicator-0'),
+        );
+        final secondIndicator = find.byKey(
+          const Key('transfer-pin-indicator-1'),
+        );
+        expect(tester.getSize(firstIndicator), const Size.square(28));
+        expect(
+          tester.getCenter(secondIndicator).dx -
+              tester.getCenter(firstIndicator).dx,
+          33,
+        );
+        final indicator = tester.widget<DecoratedBox>(firstIndicator);
+        expect(
+          (indicator.decoration as BoxDecoration).color,
+          const Color(0xFF159757),
+        );
+      }
     }
     await tester.pumpAndSettle();
 
@@ -944,12 +1116,117 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('transfer-pin-sheet')), findsOneWidget);
 
-    for (final digit in ['1', '2', '3', '4']) {
+    for (final digit in ['8', '8', '8', '8']) {
       await tester.tap(find.byKey(Key('transfer-pin-key-$digit')));
       await tester.pump();
     }
     await tester.pumpAndSettle();
     expect(mismatchMessage(), contains('2회'));
+  });
+
+  testWidgets('guest transfer accepts a complete local demonstration PIN', (
+    tester,
+  ) async {
+    _configureMockupViewport(tester);
+    final store = AppDataStore.inMemory(withMockData: false);
+    addTearDown(store.dispose);
+    await store.createAccount(
+      bankCode: '농협',
+      bankDisplayName: 'NH농협은행',
+      ownerName: 'BUI PHUONG',
+      accountNumber: '3022180437191',
+      accountType: 'NH올원모임통장',
+      openingBalance: 20000,
+    );
+    await store.createRecipient(
+      displayName: 'TRINHTRUNG',
+      bankCode: '신한',
+      accountNumber: '110628103680',
+      showTransferWarning: true,
+    );
+
+    await tester.pumpWidget(
+      _TestHost(
+        home: TransferRecipientScreen(
+          dataStore: store,
+          initialPinKeys: const [
+            '1',
+            '2',
+            '3',
+            '4',
+            '5',
+            '6',
+            '7',
+            '8',
+            '9',
+            '0',
+          ],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('recipient-TRINHTRUNG')));
+    await tester.pumpAndSettle();
+    for (final digit in ['5', '0', '0', '0']) {
+      await tester.tap(find.byKey(Key('amount-key-$digit')));
+      await tester.pump();
+    }
+    await tester.tap(find.byKey(const Key('transfer-next')));
+    await tester.pumpAndSettle();
+    for (final digit in ['1', '2', '3', '4']) {
+      await tester.tap(find.byKey(Key('transfer-pin-key-$digit')));
+      await tester.pump();
+    }
+    await tester.pump(const Duration(milliseconds: 180));
+
+    expect(
+      find.byKey(const Key('transfer-loading-pinToWarning')),
+      findsOneWidget,
+    );
+    for (
+      var frame = 0;
+      frame < 120 &&
+          find.byKey(const Key('transfer-warning-popup')).evaluate().isEmpty;
+      frame++
+    ) {
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    expect(find.byKey(const Key('transfer-warning-popup')), findsOneWidget);
+  });
+
+  testWidgets('transfer loading uses responsive reference coordinates', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 780);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(
+      _TestHost(
+        home: TransferLoadingOverlay(
+          playbackKey: 1,
+          duration: const Duration(seconds: 2),
+          onComplete: () {},
+        ),
+      ),
+    );
+    await tester.pump();
+
+    const scale = 780 / 1280;
+    const canvasLeft = (360 - (588 * scale)) / 2;
+    expect(
+      tester.getTopLeft(find.byKey(const Key('transfer-loading-logo'))),
+      const Offset(canvasLeft + (234 * scale), 581 * scale),
+    );
+    final logo = find.byKey(const Key('transfer-loading-logo'));
+    final paintedLogoSize =
+        tester.getBottomRight(logo) - tester.getTopLeft(logo);
+    expect(paintedLogoSize, const Offset(120 * scale, 120 * scale));
+    expect(
+      tester.getSize(find.byKey(const Key('transfer-loading-scrim'))),
+      const Size(360, 780),
+    );
   });
 
   testWidgets(
@@ -1030,7 +1307,7 @@ void main() {
             .widget<Text>(find.byKey(const Key('amount-source-card-value')))
             .style
             ?.fontWeight,
-        FontWeight.w400,
+        FontWeight.w500,
       );
       expect(
         tester
@@ -1434,7 +1711,7 @@ class _TestHost extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(useMaterial3: true, fontFamily: 'NotoSansKR'),
+      theme: buildAllOneTheme(),
       home: home,
     );
   }
@@ -1457,4 +1734,28 @@ class _VerifiedTransferAuth extends AuthService {
     failedAttempts: pin == '1234' ? 0 : 1,
     matched: pin == '1234',
   );
+}
+
+class _CountingTransferAuth extends AuthService {
+  int _failedAttempts = 0;
+
+  @override
+  bool get isSignedIn => true;
+
+  @override
+  Future<PinStatus> pinStatus(PinPurpose purpose) async =>
+      PinStatus(configured: true, failedAttempts: _failedAttempts);
+
+  @override
+  Future<PinVerificationResult> verifyPin(
+    PinPurpose purpose,
+    String pin,
+  ) async {
+    _failedAttempts++;
+    return PinVerificationResult(
+      configured: true,
+      failedAttempts: _failedAttempts,
+      matched: false,
+    );
+  }
 }

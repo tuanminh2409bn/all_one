@@ -225,7 +225,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _openAccountDetails() async {
-    await Navigator.of(context).push<TransferFlowResult>(
+    final result = await Navigator.of(context).push<TransferFlowResult>(
       MaterialPageRoute<TransferFlowResult>(
         builder: (_) => AccountDetailsScreen(
           auth: widget.auth,
@@ -234,8 +234,10 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
-    if (mounted) {
-      showDeviceStatusBar(darkIcons: true, backgroundColor: Colors.white);
+    if (!mounted) return;
+    showDeviceStatusBar(darkIcons: true, backgroundColor: Colors.white);
+    if (result == TransferFlowResult.failed) {
+      await showTransferFailurePopup(context);
     }
   }
 

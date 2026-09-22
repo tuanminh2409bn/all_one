@@ -30,6 +30,6 @@ flutter:
     - family: NotoSansKR
       fonts:
         - asset: assets/fonts/NotoSansKR.ttf
-          weight: 400
+          weight: 500
         - asset: assets/fonts/NotoSansCJKkr-Bold.otf
           weight: 700

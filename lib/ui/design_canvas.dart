@@ -84,6 +84,8 @@ class DesignCanvas extends StatelessWidget {
                     child: DefaultTextStyle(
                       style: const TextStyle(
                         fontFamily: 'NotoSansKR',
+                        fontWeight: FontWeight.w500,
+                        fontVariations: [FontVariation('wght', 500)],
                         color: Color(0xFF151820),
                       ),
                       child: child,

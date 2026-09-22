@@ -45,4 +45,34 @@ void main() {
     );
     expect(warningToggle.value, isTrue);
   });
+
+  testWidgets('recipient editor remains scrollable above the keyboard', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(588, 1280);
+    tester.view.viewInsets = const FakeViewPadding(bottom: 500);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetViewInsets);
+
+    final store = AppDataStore.inMemory(withMockData: false);
+    addTearDown(store.dispose);
+    await tester.pumpWidget(
+      MaterialApp(home: DataManagementScreen(store: store, initialTab: 2)),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('add-recipient')));
+    await tester.pumpAndSettle();
+
+    final dialog = tester.widget<AlertDialog>(
+      find.byKey(const Key('recipient-editor-dialog')),
+    );
+    expect(dialog.scrollable, isTrue);
+    expect(tester.takeException(), isNull);
+    expect(
+      tester.getBottomRight(find.widgetWithText(FilledButton, '저장')).dy,
+      lessThanOrEqualTo(780),
+    );
+  });
 }
