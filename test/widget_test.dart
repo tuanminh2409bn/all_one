@@ -843,11 +843,33 @@ void main() {
         find.byKey(const Key('transfer-recipient-manage-link')),
         findsOneWidget,
       );
+      final recentTab = find.byKey(const Key('transfer-recipient-tab-연락처'));
+      final manageLink = find.byKey(
+        const Key('transfer-recipient-manage-link'),
+      );
+      final recentRow = find.byKey(const Key('recipient-TRINHTRUNG'));
+      expect(tester.getBottomLeft(recentTab).dy, 749);
+      expect(tester.getTopLeft(manageLink).dy, 787);
+      expect(tester.getTopLeft(recentRow).dy, 826);
+      await tester.tap(find.byKey(Key('recipient-favorite-${recipient.id}')));
+      await tester.pumpAndSettle();
+      expect(store.recipients.single.favorite, isFalse);
+      expect(manageLink, findsNothing);
+      expect(tester.getTopLeft(recentRow).dy, 766);
+
+      await tester.tap(find.byKey(Key('recipient-favorite-${recipient.id}')));
+      await tester.pumpAndSettle();
+      expect(store.recipients.single.favorite, isTrue);
+      expect(manageLink, findsOneWidget);
+      expect(tester.getTopLeft(recentRow).dy, 826);
 
       await tester.tap(find.byKey(const Key('transfer-bank-selector')));
       await tester.pumpAndSettle();
       await tester.tap(find.text('NH농협'));
       await tester.pumpAndSettle();
+      expect(tester.getBottomLeft(recentTab).dy, 689);
+      expect(tester.getTopLeft(manageLink).dy, 727);
+      expect(tester.getTopLeft(recentRow).dy, 766);
 
       expect(
         find.byKey(const Key('transfer-selected-bank-logo')),
@@ -905,8 +927,80 @@ void main() {
       await tester.pumpAndSettle();
       expect(store.recipients.single.favorite, isFalse);
       expect(find.byKey(const Key('favorite-star-idle')), findsOneWidget);
+      expect(manageLink, findsNothing);
+      expect(tester.getTopLeft(recentRow).dy, 706);
     },
   );
+
+  testWidgets('amount source card shows the selected account live balance', (
+    tester,
+  ) async {
+    _configureMockupViewport(tester);
+    final store = AppDataStore.inMemory(withMockData: false);
+    addTearDown(store.dispose);
+    final firstAccount = await store.createAccount(
+      bankCode: '농협',
+      bankDisplayName: 'NH농협은행',
+      ownerName: 'BUI PHUONG',
+      accountNumber: '3022180437191',
+      accountType: 'NH올원모임통장',
+      openingBalance: 20000,
+    );
+    await store.createTransaction(
+      accountId: firstAccount.id,
+      title: '추가 입금',
+      signedAmount: 5000,
+      occurredAt: DateTime(2026, 9, 23),
+      channel: '모바일',
+    );
+    final secondAccount = await store.createAccount(
+      bankCode: '신한',
+      bankDisplayName: '신한은행',
+      ownerName: 'BUI PHUONG',
+      accountNumber: '110123456789',
+      accountType: '입출금통장',
+      openingBalance: 40000,
+    );
+    await store.createRecipient(
+      displayName: 'TRINHTRUNG',
+      bankCode: '신한',
+      accountNumber: '110628103680',
+    );
+
+    await tester.pumpWidget(
+      _TestHost(home: TransferRecipientScreen(dataStore: store)),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('recipient-TRINHTRUNG')));
+    await tester.pumpAndSettle();
+
+    String displayedBalance() => tester
+        .widget<Text>(find.byKey(const Key('amount-source-card-value')))
+        .data!;
+    expect(displayedBalance(), '25,000원');
+
+    for (final digit in ['5', '0', '0', '0']) {
+      await tester.tap(find.byKey(Key('amount-key-$digit')));
+      await tester.pump();
+    }
+    expect(
+      tester.widget<Text>(find.byKey(const Key('amount-display'))).data,
+      '5,000원',
+    );
+    expect(displayedBalance(), '25,000원');
+
+    await tester.tap(find.byKey(const Key('source-account-selector')));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const Key('source-account-option-신한은행-110123456789')),
+    );
+    await tester.pumpAndSettle();
+    expect(displayedBalance(), '40,000원');
+
+    await store.saveAccountWithCurrentBalance(secondAccount, 32000);
+    await tester.pumpAndSettle();
+    expect(displayedBalance(), '32,000원');
+  });
 
   testWidgets('signed-in wrong PIN attempts match the reference flow', (
     tester,
@@ -968,7 +1062,12 @@ void main() {
     expect(find.text('신한은행 110628103680'), findsOneWidget);
     expect(find.text('얼마를 보낼까요?'), findsOneWidget);
     expect(find.text('NH농협은행(7191)'), findsOneWidget);
-    expect(find.text('0원'), findsOneWidget);
+    expect(
+      tester
+          .widget<Text>(find.byKey(const Key('amount-source-card-value')))
+          .data,
+      '20,000원',
+    );
     expect(nextButton().onPressed, isNull);
     expect(
       nextButton().style?.backgroundColor?.resolve(<WidgetState>{
@@ -1136,6 +1235,8 @@ void main() {
     await tester.tap(find.byKey(const Key('transfer-pin-mismatch-confirm')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('transfer-pin-sheet')), findsOneWidget);
+    expect(find.byKey(const Key('transfer-pin-reset')), findsNothing);
+    expect(find.text('비밀번호 재설정'), findsNothing);
 
     for (final digit in ['8', '8', '8', '8']) {
       await tester.tap(find.byKey(Key('transfer-pin-key-$digit')));
@@ -1340,6 +1441,32 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('이체확인'), findsOneWidget);
       expect(find.byKey(const Key('transfer-review-confirm')), findsOneWidget);
+      expect(find.byKey(const Key('transfer-review-close')), findsOneWidget);
+      expect(find.byKey(const Key('transfer-home')), findsNothing);
+      expect(
+        find.byKey(const Key('transfer-review-edit-icon')),
+        findsNWidgets(3),
+      );
+      for (final editIcon in tester.widgetList<Image>(
+        find.byKey(const Key('transfer-review-edit-icon')),
+      )) {
+        expect(
+          (editIcon.image as AssetImage).assetName,
+          'assets/images/ref_transfer_review_edit.png',
+        );
+      }
+      expect(
+        tester.widget<Text>(find.text('메모')).style?.color,
+        const Color(0xFF686868),
+      );
+      expect(
+        tester.widget<Text>(find.text('메모입력')).style?.color,
+        const Color(0xFFB6B6B6),
+      );
+      expect(
+        tester.widget<Text>(find.textContaining('료 면제!')).style?.height,
+        1.55,
+      );
       expect(
         tester.getSize(find.byKey(const Key('transfer-review-add'))),
         const Size(172, 81),
@@ -1580,7 +1707,7 @@ void main() {
                   .image
               as AssetImage)
           .assetName,
-      'assets/images/ref_transfer_failure_brand.jpg',
+      'assets/images/ref_transfer_failure_brand_sharp.png',
     );
 
     await tester.tap(find.byKey(const Key('transfer-failure-home-confirm')));

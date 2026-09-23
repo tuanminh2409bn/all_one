@@ -445,6 +445,26 @@ void main() {
     );
     await _precache(tester, BankCatalog.logoAssets);
     await tester.pumpAndSettle();
+    await _settleAssetImages(tester);
+    await expectLater(
+      find.byType(Overlay).first,
+      matchesGoldenFile('goldens/preview_11b0_transfer_recipient_recent.png'),
+    );
+    await tester.tap(find.byKey(Key('recipient-favorite-${recipient.id}')));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('transfer-recipient-manage-link')),
+      findsNothing,
+    );
+    await expectLater(
+      find.byType(Overlay).first,
+      matchesGoldenFile(
+        'goldens/preview_11b0_transfer_recipient_recent_unstarred.png',
+      ),
+    );
+    await tester.tap(find.byKey(Key('recipient-favorite-${recipient.id}')));
+    await tester.pumpAndSettle();
+
     await tester.tap(find.byKey(const Key('transfer-bank-selector')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('NH농협'));
@@ -569,6 +589,13 @@ void main() {
     await expectLater(
       find.byType(Overlay).first,
       matchesGoldenFile('goldens/preview_11g_transfer_pin_failure.png'),
+    );
+    await tester.tap(find.byKey(const Key('transfer-pin-mismatch-confirm')));
+    await tester.pumpAndSettle();
+    expect(find.text('비밀번호 재설정'), findsNothing);
+    await expectLater(
+      find.byType(Overlay).first,
+      matchesGoldenFile('goldens/preview_11g1_transfer_pin_after_failure.png'),
     );
   });
 
@@ -695,7 +722,7 @@ void main() {
       'assets/images/ref_transfer_pin_symbol_right.jpg',
       'assets/images/ref_transfer_pin_rearrange.png',
       'assets/images/ref_transfer_pin_delete.png',
-      'assets/images/ref_transfer_failure_brand.jpg',
+      'assets/images/ref_transfer_failure_brand_sharp.png',
     ]);
     await tester.pumpAndSettle();
 
@@ -769,7 +796,7 @@ void main() {
     );
     await _precache(tester, <String>[
       ..._homeAssets,
-      'assets/images/ref_transfer_failure_brand.jpg',
+      'assets/images/ref_transfer_failure_brand_sharp.png',
     ]);
     await tester.pumpAndSettle();
 

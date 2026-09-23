@@ -8,7 +8,6 @@ import '../core/app_data.dart';
 import '../core/auth_service.dart';
 import '../core/bank_catalog.dart';
 import '../core/pin_security.dart';
-import 'auth_sheet.dart';
 import 'bank_logo.dart';
 import 'data_management_screen.dart';
 import 'design_canvas.dart';
@@ -558,27 +557,6 @@ class _TransferRecipientScreenState extends State<TransferRecipientScreen> {
     setState(() => _stage = _TransferStage.pin);
   }
 
-  Future<void> _resetTransferPin() async {
-    final auth = widget.auth;
-    if (auth == null || _pinBusy || !auth.isSignedIn) return;
-    final authenticated = await showFirebaseReauthenticationSheet(
-      context,
-      auth: auth,
-    );
-    if (!authenticated || !mounted) return;
-    setState(() => _pinBusy = true);
-    await auth.clearPin(PinPurpose.transfer);
-    if (!mounted) return;
-    setState(() {
-      _pinBusy = false;
-      _pinDigits.clear();
-      _pendingTransferPin = null;
-      _pinSetupError = null;
-      _pinFailedAttempts = 0;
-      _pinMode = _TransferPinMode.create;
-    });
-  }
-
   Future<void> _completeTransferAfterPin() async {
     final source = _selectedSourceAccount;
     if (source == null || _amount <= 0) return;
@@ -675,23 +653,25 @@ class _TransferRecipientScreenState extends State<TransferRecipientScreen> {
               color: Colors.white,
               child: Stack(
                 children: [
-                  _TopControls(
-                    onBack: _back,
-                    onManageRecipients: _openRecipientManagement,
-                    onCancel: () => Navigator.of(context).pop(),
-                    showBack:
-                        _stage != _TransferStage.confirmation &&
-                        _stage != _TransferStage.loadingConfirmation,
-                    showCancel:
-                        _stage == _TransferStage.recipient ||
-                        _stage == _TransferStage.amount ||
-                        _stage == _TransferStage.pin ||
-                        _stage == _TransferStage.pinMismatch ||
-                        _stage == _TransferStage.loadingAmount ||
-                        _stage == _TransferStage.transferWarning,
-                    showRecipientActions:
-                        _stage == _TransferStage.recipient && !_manualEntry,
-                  ),
+                  if (_stage != _TransferStage.confirmation &&
+                      _stage != _TransferStage.loadingConfirmation)
+                    _TopControls(
+                      onBack: _back,
+                      onManageRecipients: _openRecipientManagement,
+                      onCancel: () => Navigator.of(context).pop(),
+                      showBack:
+                          _stage != _TransferStage.confirmation &&
+                          _stage != _TransferStage.loadingConfirmation,
+                      showCancel:
+                          _stage == _TransferStage.recipient ||
+                          _stage == _TransferStage.amount ||
+                          _stage == _TransferStage.pin ||
+                          _stage == _TransferStage.pinMismatch ||
+                          _stage == _TransferStage.loadingAmount ||
+                          _stage == _TransferStage.transferWarning,
+                      showRecipientActions:
+                          _stage == _TransferStage.recipient && !_manualEntry,
+                    ),
                   if (_stage == _TransferStage.confirmation)
                     _TransferConfirmationPage(
                       sourceAccount: sourceAccount!,
@@ -730,15 +710,11 @@ class _TransferRecipientScreenState extends State<TransferRecipientScreen> {
                       enteredDigits: _pinDigits.length,
                       keys: _pinKeys,
                       errorMessage: _transferPinError,
-                      showReset:
-                          _pinMode == _TransferPinMode.verify &&
-                          _pinFailedAttempts > 0,
                       inputEnabled: !_pinInputLocked && !_pinBusy,
                       onDigit: _appendPinDigit,
                       onDelete: _deletePinDigit,
                       onRearrange: _rearrangePinKeys,
                       onClose: _back,
-                      onReset: _resetTransferPin,
                     )
                   else if (_stage == _TransferStage.amount &&
                       sourceAccount != null)
@@ -1634,6 +1610,8 @@ class _ManualEntryState extends State<_ManualEntry> {
   Widget build(BuildContext context) {
     const tabs = ['최근', '자주', '내계좌', '연락처'];
     final recipients = _visibleRecipients;
+    final showRecentManageLink =
+        _tabIndex == 0 && recipients.any((recipient) => recipient.favorite);
     final hasSelectedBank = widget.bank != null;
     final selectedBankControlOffset = hasSelectedBank ? -60.0 : 0.0;
     return Stack(
@@ -1911,10 +1889,10 @@ class _ManualEntryState extends State<_ManualEntry> {
               ),
             ),
         ],
-        if (_tabIndex == 0 && recipients.isNotEmpty)
+        if (showRecentManageLink)
           Positioned(
             right: 35,
-            top: 727,
+            top: 787 + selectedBankControlOffset,
             child: TextButton(
               key: const Key('transfer-recipient-manage-link'),
               onPressed: widget.onManageRecipients,
@@ -1981,7 +1959,11 @@ class _ManualEntryState extends State<_ManualEntry> {
           Positioned(
             left: 35,
             right: 35,
-            top: _tabIndex == 1 ? 1021 : 766,
+            top: _tabIndex == 1
+                ? 1021
+                : _tabIndex == 0
+                ? (showRecentManageLink ? 826 : 766) + selectedBankControlOffset
+                : 766,
             bottom: 28,
             child: ListView.separated(
               key: const Key('transfer-recipient-tab-list'),
@@ -2246,7 +2228,7 @@ class _AmountPage extends StatelessWidget {
           height: 75,
           child: _AmountSourceCard(
             account: sourceAccount,
-            amount: amount,
+            displayedAmount: sourceAccount.availableBalance,
             onTap: onChooseSourceAccount,
           ),
         ),
@@ -2575,13 +2557,13 @@ class _AmountChip extends StatelessWidget {
 class _AmountSourceCard extends StatelessWidget {
   const _AmountSourceCard({
     required this.account,
-    required this.amount,
+    required this.displayedAmount,
     required this.onTap,
     this.emphasizeAmount = true,
   });
 
   final _SourceAccount account;
-  final int amount;
+  final int displayedAmount;
   final VoidCallback onTap;
   final bool emphasizeAmount;
 
@@ -2632,7 +2614,7 @@ class _AmountSourceCard extends StatelessWidget {
                 ),
               ),
               Text(
-                '${_AmountPage._formatted(amount)}원',
+                '${_AmountPage._formatted(displayedAmount)}원',
                 key: const Key('amount-source-card-value'),
                 style: TextStyle(
                   color: Colors.black,
@@ -3382,6 +3364,7 @@ class _TransferConfirmationPage extends StatelessWidget {
                 label: '수수료',
                 value: '${sourceAccount.ownerName}님은 수수\n료 면제!',
                 valueColor: const Color(0xFF287AC7),
+                valueLineHeight: 1.55,
               ),
               const SizedBox(height: 28),
               _TransferConfirmationRow(
@@ -3400,6 +3383,7 @@ class _TransferConfirmationPage extends StatelessWidget {
                 label: '메모',
                 value: '메모입력',
                 editable: true,
+                mutedLabel: true,
                 mutedValue: true,
               ),
             ],
@@ -3471,16 +3455,20 @@ class _TransferConfirmationRow extends StatelessWidget {
     required this.value,
     this.valueColor = const Color(0xFF111111),
     this.editable = false,
+    this.mutedLabel = false,
     this.mutedValue = false,
     this.valueScaleX = 1.05,
+    this.valueLineHeight = 1.35,
   });
 
   final String label;
   final String value;
   final Color valueColor;
   final bool editable;
+  final bool mutedLabel;
   final bool mutedValue;
   final double valueScaleX;
+  final double valueLineHeight;
 
   @override
   Widget build(BuildContext context) => Row(
@@ -3490,8 +3478,8 @@ class _TransferConfirmationRow extends StatelessWidget {
         width: 174,
         child: Text(
           label,
-          style: const TextStyle(
-            color: Colors.black,
+          style: TextStyle(
+            color: mutedLabel ? const Color(0xFF686868) : Colors.black,
             fontSize: 20,
             fontWeight: FontWeight.w500,
             letterSpacing: -.45,
@@ -3519,9 +3507,9 @@ class _TransferConfirmationRow extends StatelessWidget {
                     value,
                     textAlign: TextAlign.right,
                     style: TextStyle(
-                      color: mutedValue ? Colors.black : valueColor,
+                      color: mutedValue ? const Color(0xFFB6B6B6) : valueColor,
                       fontSize: 20,
-                      height: 1.35,
+                      height: valueLineHeight,
                       fontWeight: FontWeight.w500,
                       letterSpacing: .4,
                     ),
@@ -3530,7 +3518,13 @@ class _TransferConfirmationRow extends StatelessWidget {
               ),
               if (editable) ...[
                 const SizedBox(width: 6),
-                const Icon(Icons.edit_outlined, size: 22),
+                Image.asset(
+                  'assets/images/ref_transfer_review_edit.png',
+                  key: const Key('transfer-review-edit-icon'),
+                  width: 24,
+                  height: 24,
+                  filterQuality: FilterQuality.high,
+                ),
               ],
             ],
           ),
@@ -3604,7 +3598,7 @@ class _TransferPinMismatchBackdrop extends StatelessWidget {
         height: 75,
         child: _AmountSourceCard(
           account: sourceAccount,
-          amount: amount,
+          displayedAmount: amount,
           onTap: () {},
           emphasizeAmount: false,
         ),
@@ -3623,13 +3617,11 @@ class _TransferPinPage extends StatelessWidget {
     required this.enteredDigits,
     required this.keys,
     required this.errorMessage,
-    required this.showReset,
     required this.inputEnabled,
     required this.onDigit,
     required this.onDelete,
     required this.onRearrange,
     required this.onClose,
-    required this.onReset,
   });
 
   final String title;
@@ -3640,13 +3632,11 @@ class _TransferPinPage extends StatelessWidget {
   final int enteredDigits;
   final List<String> keys;
   final String? errorMessage;
-  final bool showReset;
   final bool inputEnabled;
   final ValueChanged<String> onDigit;
   final VoidCallback onDelete;
   final VoidCallback onRearrange;
   final VoidCallback onClose;
-  final VoidCallback onReset;
 
   @override
   Widget build(BuildContext context) {
@@ -3752,16 +3742,6 @@ class _TransferPinPage extends StatelessWidget {
                         fontSize: 17,
                         fontWeight: FontWeight.w500,
                       ),
-                    ),
-                  ),
-                if (showReset)
-                  Positioned(
-                    right: 31,
-                    top: 176,
-                    child: TextButton(
-                      key: const Key('transfer-pin-reset'),
-                      onPressed: onReset,
-                      child: const Text('비밀번호 재설정'),
                     ),
                   ),
                 Positioned(
@@ -4304,7 +4284,7 @@ class _TransferFailurePopup extends StatelessWidget {
                       top: 24,
                       child: Center(
                         child: Image.asset(
-                          'assets/images/ref_transfer_failure_brand.jpg',
+                          'assets/images/ref_transfer_failure_brand_sharp.png',
                           key: const Key('transfer-failure-brand'),
                           width: 164,
                           height: 44,
