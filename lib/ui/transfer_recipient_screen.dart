@@ -2187,6 +2187,7 @@ class _AmountPage extends StatelessWidget {
           recipientName: recipientName,
           bank: bank,
           account: account,
+          accountColor: const Color(0xFF707070),
         ),
         Positioned(
           left: 0,
@@ -2268,11 +2269,13 @@ class _TransferRecipientIdentity extends StatelessWidget {
     required this.recipientName,
     required this.bank,
     required this.account,
+    this.accountColor = Colors.black,
   });
 
   final String? recipientName;
   final String bank;
   final String account;
+  final Color accountColor;
 
   @override
   Widget build(BuildContext context) => Positioned(
@@ -2297,12 +2300,12 @@ class _TransferRecipientIdentity extends StatelessWidget {
           '${_institutionLabel(bank)} $account',
           key: const Key('amount-recipient-account'),
           textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: Colors.black,
+          style: TextStyle(
+            color: accountColor,
             fontSize: 20,
             fontWeight: FontWeight.w500,
             decoration: TextDecoration.underline,
-            decorationColor: Colors.black,
+            decorationColor: accountColor,
             decorationThickness: 1,
           ),
         ),

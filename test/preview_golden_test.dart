@@ -330,6 +330,39 @@ void main() {
     );
   });
 
+  testWidgets('export Home to transaction history Loading 2 checkpoints', (
+    tester,
+  ) async {
+    _configureMockupViewport(tester);
+    final store = AppDataStore.inMemory(withMockData: false);
+    addTearDown(store.dispose);
+    await tester.pumpWidget(
+      _homeHost(HomeScreen(auth: AuthService(), dataStore: store)),
+    );
+    await _precache(tester, [
+      ..._homeAssets,
+      'assets/images/transaction_tlj_cakes.jpg',
+    ]);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(OutlinedButton, '거래내역'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+    await _settleAssetImages(tester);
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile('goldens/preview_9c_home_history_loading_home.png'),
+    );
+
+    await tester.pump(const Duration(milliseconds: 1150));
+    await tester.pump();
+    await _settleAssetImages(tester);
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile('goldens/preview_9d_home_history_loading_details.png'),
+    );
+  });
+
   testWidgets('export transfer recipient and institution picker checkpoints', (
     tester,
   ) async {

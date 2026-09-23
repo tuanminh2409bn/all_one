@@ -109,6 +109,34 @@ void main() {
     },
   );
 
+  test('Home benefit strip loops the video frames', () async {
+    final data = await rootBundle.load(
+      'assets/images/home_daily_benefit_loop.png',
+    );
+    expect(
+      String.fromCharCodes([
+        for (var offset = 37; offset < 41; offset++) data.getUint8(offset),
+      ]),
+      'acTL',
+    );
+    expect(data.getUint32(41), 175);
+    expect(data.getUint32(45), 0); // APNG repeats indefinitely.
+    final bytes = data.buffer.asUint8List(
+      data.offsetInBytes,
+      data.lengthInBytes,
+    );
+    final codec = await ui.instantiateImageCodec(bytes);
+
+    expect(codec.frameCount, 175);
+    final firstFrame = await codec.getNextFrame();
+    expect(firstFrame.duration, const Duration(milliseconds: 50));
+    expect(firstFrame.image.width, 410);
+    expect(firstFrame.image.height, 70);
+
+    firstFrame.image.dispose();
+    codec.dispose();
+  });
+
   test(
     'certificate loading asset preserves the source-video cadence',
     () async {
@@ -348,14 +376,20 @@ void main() {
     expect(find.byType(HomeScreen), findsOneWidget);
     expect(find.byKey(const Key('home-top-reference')), findsNothing);
     expect(find.byKey(const Key('home-bottom-navigation')), findsOneWidget);
-    expect(find.byKey(const Key('home-daily-point-hand')), findsOneWidget);
+    final benefitAnimation = tester.widget<Image>(
+      find.byKey(const Key('home-daily-benefit-animation')),
+    );
+    expect(
+      (benefitAnimation.image as AssetImage).assetName,
+      'assets/images/home_daily_benefit_loop.png',
+    );
     final accountLogo = find.byKey(const Key('home-account-logo'));
     expect(tester.getSize(accountLogo), const Size.square(48));
     expect(
       tester.widget<ClipRRect>(accountLogo).borderRadius,
       BorderRadius.circular(14),
     );
-    expect(find.text('매일 포인트 용돈 받기'), findsOneWidget);
+    expect(find.text('매일 포인트 용돈 받기'), findsNothing);
     expect(find.text('쓸수록 혜택받기'), findsNothing);
     expect(
       tester.getSize(find.byKey(const Key('home-fortune-chip'))),
@@ -389,7 +423,10 @@ void main() {
       const Offset(0, -700),
     );
     await tester.pumpAndSettle();
-    expect(find.text('매일 포인트 용돈 받기'), findsOneWidget);
+    expect(
+      find.byKey(const Key('home-daily-benefit-animation')),
+      findsOneWidget,
+    );
     expect(find.text('쓸수록 혜택받기'), findsNothing);
     expect(find.byKey(const Key('home-bottom-navigation')), findsOneWidget);
     expect(
@@ -486,6 +523,66 @@ void main() {
     await tester.tap(find.byKey(const Key('limit-release-back')));
     await tester.pumpAndSettle();
     expect(find.byType(HomeScreen), findsOneWidget);
+  });
+
+  testWidgets('middle Home action shows Loading 2 before transaction history', (
+    tester,
+  ) async {
+    _configureMockupViewport(tester);
+    final store = AppDataStore.inMemory(withMockData: false);
+    addTearDown(store.dispose);
+    await tester.pumpWidget(
+      _TestHost(
+        home: HomeScreen(auth: AuthService(), dataStore: store),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(OutlinedButton, '거래내역'));
+    await tester.pump();
+
+    const loadingKey = Key('home-loading-to-account-details');
+    expect(find.byKey(loadingKey), findsOneWidget);
+    expect(find.byType(HomeScreen), findsOneWidget);
+    expect(find.byType(AccountDetailsScreen), findsNothing);
+    expect(
+      tester
+          .widget<ModalBarrier>(find.byKey(const Key('transfer-loading-scrim')))
+          .color,
+      const Color(0x7E000000),
+    );
+    expect(
+      tester.getTopLeft(find.byKey(const Key('transfer-loading-logo'))),
+      const Offset(234, 581),
+    );
+    expect(
+      tester.getSize(find.byKey(const Key('transfer-loading-logo'))),
+      const Size.square(120),
+    );
+    final image = tester.widget<Image>(
+      find.descendant(
+        of: find.byKey(const Key('transfer-loading-logo')),
+        matching: find.byType(Image),
+      ),
+    );
+    expect(
+      (image.image as AssetImage).assetName,
+      'assets/images/loading_original.png',
+    );
+
+    await tester.pump(const Duration(milliseconds: 1299));
+    expect(find.byType(HomeScreen), findsOneWidget);
+    expect(find.byType(AccountDetailsScreen), findsNothing);
+    await tester.pump(const Duration(milliseconds: 1));
+    await tester.pump();
+    expect(find.byType(AccountDetailsScreen), findsOneWidget);
+    expect(find.byKey(loadingKey), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 199));
+    expect(find.byKey(loadingKey), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 17));
+    await tester.pump();
+    expect(find.byKey(loadingKey), findsNothing);
+    expect(find.text('거래내역조회'), findsOneWidget);
   });
 
   testWidgets('middle account action opens sticky transaction history', (
@@ -1060,6 +1157,11 @@ void main() {
     const safeBottom = 1280 - 68;
     expect(find.text('TRINHTRUNG'), findsOneWidget);
     expect(find.text('신한은행 110628103680'), findsOneWidget);
+    final recipientAccount = tester.widget<Text>(
+      find.byKey(const Key('amount-recipient-account')),
+    );
+    expect(recipientAccount.style?.color, const Color(0xFF707070));
+    expect(recipientAccount.style?.decorationColor, const Color(0xFF707070));
     expect(find.text('얼마를 보낼까요?'), findsOneWidget);
     expect(find.text('NH농협은행(7191)'), findsOneWidget);
     expect(

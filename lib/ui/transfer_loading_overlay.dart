@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 
 import 'design_canvas.dart';
 
+const homeToAccountDetailsLoadingDuration = Duration(milliseconds: 1500);
+const homeToAccountDetailsScreenSwitchDelay = Duration(milliseconds: 1300);
 const transferHomeToRecipientLoadingDuration = Duration(milliseconds: 400);
 const transferHomeToRecipientScreenSwitchDelay = Duration(milliseconds: 233);
 const transferPinAcceptedLoadingDuration = Duration(milliseconds: 1000);
@@ -27,6 +29,8 @@ class TransferLoadingOverlay extends StatefulWidget {
     required this.onComplete,
     this.scrimDelay = Duration.zero,
     this.onScrimShown,
+    this.backdropSwitchDelay,
+    this.onBackdropSwitch,
   });
 
   final Object playbackKey;
@@ -34,6 +38,8 @@ class TransferLoadingOverlay extends StatefulWidget {
   final VoidCallback onComplete;
   final Duration scrimDelay;
   final VoidCallback? onScrimShown;
+  final Duration? backdropSwitchDelay;
+  final VoidCallback? onBackdropSwitch;
 
   @override
   State<TransferLoadingOverlay> createState() => _TransferLoadingOverlayState();
@@ -43,6 +49,7 @@ class _TransferLoadingOverlayState extends State<TransferLoadingOverlay>
     with SingleTickerProviderStateMixin {
   late final AnimationController _clock;
   Timer? _scrimTimer;
+  Timer? _backdropSwitchTimer;
   late bool _scrimVisible;
 
   @override
@@ -54,6 +61,11 @@ class _TransferLoadingOverlayState extends State<TransferLoadingOverlay>
         if (!mounted) return;
         setState(() => _scrimVisible = true);
         widget.onScrimShown?.call();
+      });
+    }
+    if (widget.backdropSwitchDelay case final delay?) {
+      _backdropSwitchTimer = Timer(delay, () {
+        if (mounted) widget.onBackdropSwitch?.call();
       });
     }
     _clock = AnimationController(vsync: this, duration: widget.duration)
@@ -68,6 +80,7 @@ class _TransferLoadingOverlayState extends State<TransferLoadingOverlay>
   @override
   void dispose() {
     _scrimTimer?.cancel();
+    _backdropSwitchTimer?.cancel();
     _clock.dispose();
     super.dispose();
   }

@@ -41,7 +41,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _hideAmounts = false;
   bool _largeText = false;
   bool _nhTab = true;
-  int _transferLoadingPlaybackId = 0;
+  int _loadingPlaybackId = 0;
   final _benefitsKey = GlobalKey();
   final _assetsKey = GlobalKey();
 
@@ -225,15 +225,56 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _openAccountDetails() async {
-    final result = await Navigator.of(context).push<TransferFlowResult>(
-      MaterialPageRoute<TransferFlowResult>(
-        builder: (_) => AccountDetailsScreen(
-          auth: widget.auth,
-          dataStore: widget.dataStore,
-          accountId: _primaryAccount?.id,
+    await const AssetImage('assets/images/loading_original.png').evict();
+    if (!mounted) return;
+
+    final loadingDone = Completer<void>();
+    final routeResult = Completer<TransferFlowResult?>();
+    final playbackId = ++_loadingPlaybackId;
+    final loadingOverlay = Overlay.of(context, rootOverlay: true);
+    var routeOpened = false;
+    late final OverlayEntry loadingEntry;
+
+    void openDetails() {
+      if (routeOpened || !mounted) return;
+      routeOpened = true;
+      final result = Navigator.of(context).push<TransferFlowResult>(
+        PageRouteBuilder<TransferFlowResult>(
+          transitionDuration: Duration.zero,
+          reverseTransitionDuration: Duration.zero,
+          pageBuilder: (_, __, ___) => AccountDetailsScreen(
+            auth: widget.auth,
+            dataStore: widget.dataStore,
+            accountId: _primaryAccount?.id,
+          ),
         ),
+      );
+      loadingOverlay.rearrange([loadingEntry], below: loadingEntry);
+      unawaited(
+        result.then((value) {
+          if (!routeResult.isCompleted) routeResult.complete(value);
+        }),
+      );
+    }
+
+    loadingEntry = OverlayEntry(
+      builder: (_) => TransferLoadingOverlay(
+        key: const Key('home-loading-to-account-details'),
+        playbackKey: playbackId,
+        duration: homeToAccountDetailsLoadingDuration,
+        backdropSwitchDelay: homeToAccountDetailsScreenSwitchDelay,
+        onBackdropSwitch: openDetails,
+        onComplete: () {
+          loadingEntry.remove();
+          if (!loadingDone.isCompleted) loadingDone.complete();
+        },
       ),
     );
+    loadingOverlay.insert(loadingEntry);
+    await loadingDone.future;
+    if (!routeOpened) openDetails();
+    if (!mounted) return;
+    final result = await routeResult.future;
     if (!mounted) return;
     showDeviceStatusBar(darkIcons: true, backgroundColor: Colors.white);
     if (result == TransferFlowResult.failed) {
@@ -259,7 +300,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final loadingDone = Completer<void>();
     final routeResult = Completer<TransferFlowResult?>();
-    final playbackId = ++_transferLoadingPlaybackId;
+    final playbackId = ++_loadingPlaybackId;
     var routeOpened = false;
     late final OverlayEntry loadingEntry;
 

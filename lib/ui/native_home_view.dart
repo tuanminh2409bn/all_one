@@ -1481,28 +1481,22 @@ class _DailyPointCard extends StatelessWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(_cardRadius * scale),
         ),
-        child: Row(
-          children: [
-            SizedBox.square(
-              dimension: 58 * scale,
-              child: const Image(
-                key: Key('home-daily-point-hand'),
-                image: AssetImage('assets/images/ref_daily_point.png'),
-                fit: BoxFit.contain,
-                filterQuality: FilterQuality.high,
-              ),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: Transform.scale(
+            alignment: Alignment.centerLeft,
+            scale: _usesLargeHomeText(context) ? 1.13 : 1,
+            child: Image.asset(
+              'assets/images/home_daily_benefit_loop.png',
+              key: const Key('home-daily-benefit-animation'),
+              width: 410 * scale,
+              height: 70 * scale,
+              fit: BoxFit.fill,
+              filterQuality: FilterQuality.high,
+              gaplessPlayback: true,
+              semanticLabel: '매일 포인트 용돈 받기, 쓸수록 돈 되는 생활혜택 모음, 지금 핫한 이벤트 보기',
             ),
-            SizedBox(width: 18 * scale),
-            Text(
-              '매일 포인트 용돈 받기',
-              style: _style(
-                context,
-                21,
-                weight: FontWeight.w700,
-                letterSpacing: -0.65,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
