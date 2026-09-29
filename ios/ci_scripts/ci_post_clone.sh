@@ -5,7 +5,7 @@ set -e
 
 SCRIPT_DIRECTORY=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 REPOSITORY_ROOT=${CI_PRIMARY_REPOSITORY_PATH:-$(CDPATH= cd -- "$SCRIPT_DIRECTORY/../.." && pwd)}
-FLUTTER_VERSION=${FLUTTER_VERSION:-3.38.10}
+FLUTTER_VERSION=${FLUTTER_VERSION:-3.47.5}
 FLUTTER_SDK_DIRECTORY=${FLUTTER_SDK_DIRECTORY:-"$HOME/flutter"}
 
 export LANG=en_US.UTF-8
@@ -26,6 +26,7 @@ cd "$REPOSITORY_ROOT"
 flutter config --no-analytics
 flutter precache --ios
 flutter pub get
+flutter build ios --config-only --release --no-codesign
 
 if ! command -v pod >/dev/null 2>&1; then
   echo "Installing CocoaPods for Xcode Cloud..."
@@ -38,6 +39,7 @@ pod install
 
 test -f "$REPOSITORY_ROOT/ios/Flutter/Generated.xcconfig"
 test -f "$REPOSITORY_ROOT/ios/Flutter/flutter_export_environment.sh"
+test -f "$REPOSITORY_ROOT/ios/Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage/Package.swift"
 test -f "$REPOSITORY_ROOT/ios/Pods/Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"
 
 echo "Flutter and CocoaPods dependencies are ready for Xcode Cloud."
