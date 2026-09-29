@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../core/app_data.dart';
 import 'bank_logo.dart';
+import 'home_reference_effects.dart';
 import 'tlj_artwork_paths.dart';
 
 const _designWidth = 588.0;
@@ -346,9 +347,12 @@ class _HeaderBar extends StatelessWidget {
                 children: [
                   Flexible(
                     child: Text(
-                      signedIn ? '$accountName ...' : accountName,
+                      accountName,
+                      key: const Key('home-account-name-text'),
                       maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      overflow: signedIn
+                          ? TextOverflow.clip
+                          : TextOverflow.ellipsis,
                       style:
                           _style(
                             context,
@@ -360,11 +364,23 @@ class _HeaderBar extends StatelessWidget {
                             decoration: signedIn
                                 ? TextDecoration.underline
                                 : TextDecoration.none,
-                            decorationThickness: 1.2,
+                            decorationThickness: 1,
                           ),
                     ),
                   ),
                   if (signedIn) ...[
+                    SizedBox(width: 1 * scale),
+                    Text(
+                      '...',
+                      key: const Key('home-account-name-ellipsis'),
+                      style: _style(
+                        context,
+                        25,
+                        weight: FontWeight.w700,
+                        height: 1.1,
+                        letterSpacing: -0.8,
+                      ),
+                    ),
                     SizedBox(width: 13 * scale),
                     Text(
                       '님',
@@ -473,13 +489,13 @@ class _FortuneChip extends StatelessWidget {
     final scale = _HomeScale.of(context);
     return SizedBox(
       key: const Key('home-fortune-chip'),
-      width: 124 * scale,
-      height: 55 * scale,
+      width: 114 * scale,
+      height: 51 * scale,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
           Positioned(
-            left: 25 * scale,
+            left: 49 * scale,
             top: 0,
             width: 16 * scale,
             height: 10 * scale,
@@ -489,10 +505,10 @@ class _FortuneChip extends StatelessWidget {
             left: 0,
             right: 0,
             top: 8 * scale,
-            height: 47 * scale,
+            height: 43 * scale,
             child: DecoratedBox(
               decoration: BoxDecoration(
-                color: const Color(0xFF161616),
+                color: const Color(0xFF111111),
                 borderRadius: BorderRadius.circular(11 * scale),
               ),
               child: Center(
@@ -501,18 +517,23 @@ class _FortuneChip extends StatelessWidget {
                   children: [
                     Text(
                       '오늘 운세',
-                      style: _style(
-                        context,
-                        16,
-                        weight: FontWeight.w500,
-                        color: Colors.white,
-                        height: 1,
-                        letterSpacing: -0.15,
-                      ),
+                      style:
+                          _style(
+                            context,
+                            16,
+                            weight: FontWeight.w500,
+                            color: Colors.white,
+                            height: 1,
+                            letterSpacing: -0.15,
+                          ).copyWith(
+                            decoration: TextDecoration.underline,
+                            decorationColor: Colors.white,
+                            decorationThickness: 1.5,
+                          ),
                     ),
                     SizedBox(width: 3 * scale),
                     SizedBox.square(
-                      dimension: 16 * scale,
+                      dimension: 21 * scale,
                       child: const CustomPaint(painter: _CloverPainter()),
                     ),
                   ],
@@ -537,7 +558,7 @@ class _FortunePointerPainter extends CustomPainter {
     canvas.drawPath(
       path,
       Paint()
-        ..color = const Color(0xFF161616)
+        ..color = const Color(0xFF111111)
         ..isAntiAlias = true,
     );
   }
@@ -551,24 +572,36 @@ class _CloverPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final unit = size.shortestSide / 16;
-    final leaf = Paint()..color = const Color(0xFF22A447);
-    final stem = Paint()
-      ..color = const Color(0xFF16863A)
-      ..strokeWidth = 1.4 * unit
-      ..strokeCap = StrokeCap.round;
-
     canvas.save();
-    canvas.scale(unit, unit);
-    for (final center in const [
-      Offset(5.2, 5.2),
-      Offset(10.8, 5.2),
-      Offset(5.2, 10.2),
-      Offset(10.8, 10.2),
-    ]) {
-      canvas.drawCircle(center, 3.15, leaf);
+    canvas.scale(size.width / 23, size.height / 23);
+    canvas.drawPath(
+      Path()
+        ..moveTo(11.5, 12)
+        ..cubicTo(10, 17, 12, 21, 15, 22),
+      Paint()
+        ..color = const Color(0xFF20A76B)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5
+        ..strokeCap = StrokeCap.round,
+    );
+    // Each leaf has two rounded lobes and meets the others at the center.
+    final leaf = Path()
+      ..moveTo(0, 0)
+      ..cubicTo(-3, 0, -8.5, -0.5, -8.5, -4.5)
+      ..cubicTo(-8.5, -7.5, -5.5, -8.5, -4.5, -6)
+      ..cubicTo(-6.5, -10, 0, -12, 0, -6)
+      ..close();
+    canvas.translate(11.5, 10);
+    for (var index = 0; index < 4; index++) {
+      canvas.drawPath(
+        leaf,
+        Paint()
+          ..color = index.isEven
+              ? const Color(0xFF21AD69)
+              : const Color(0xFF68C866),
+      );
+      canvas.rotate(math.pi / 2);
     }
-    canvas.drawLine(const Offset(9, 10.5), const Offset(12.8, 15), stem);
     canvas.restore();
   }
 
@@ -874,15 +907,20 @@ class _AccountCard extends StatelessWidget {
                                 Flexible(
                                   child: Text(
                                     '$bank $number',
+                                    key: const Key('home-account-number'),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: _style(
-                                      context,
-                                      20,
-                                      weight: FontWeight.w500,
-                                      color: const Color(0xFF62696B),
-                                      letterSpacing: -0.45,
-                                    ),
+                                    style:
+                                        _style(
+                                          context,
+                                          18,
+                                          weight: FontWeight.w500,
+                                          letterSpacing: -0.45,
+                                        ).copyWith(
+                                          // This reference subtitle intentionally
+                                          // bypasses Home's neutral-to-black rule.
+                                          color: const Color(0xFF787878),
+                                        ),
                                   ),
                                 ),
                                 SizedBox(width: 6 * scale),
@@ -890,14 +928,18 @@ class _AccountCard extends StatelessWidget {
                                   onTap: onCopy,
                                   child: Text(
                                     '복사',
+                                    key: const Key('home-account-copy'),
                                     style:
                                         _style(
                                           context,
-                                          18,
+                                          17,
                                           weight: FontWeight.w500,
-                                          color: const Color(0xFF555B5D),
                                         ).copyWith(
+                                          color: const Color(0xFF555555),
                                           decoration: TextDecoration.underline,
+                                          decorationColor: const Color(
+                                            0xFF555555,
+                                          ),
                                         ),
                                   ),
                                 ),
@@ -1486,15 +1528,9 @@ class _DailyPointCard extends StatelessWidget {
           child: Transform.scale(
             alignment: Alignment.centerLeft,
             scale: _usesLargeHomeText(context) ? 1.13 : 1,
-            child: Image.asset(
-              'assets/images/home_daily_benefit_loop.png',
+            child: HomeBenefitStrip(
               key: const Key('home-daily-benefit-animation'),
-              width: 410 * scale,
-              height: 70 * scale,
-              fit: BoxFit.fill,
-              filterQuality: FilterQuality.high,
-              gaplessPlayback: true,
-              semanticLabel: '매일 포인트 용돈 받기, 쓸수록 돈 되는 생활혜택 모음, 지금 핫한 이벤트 보기',
+              scale: scale,
             ),
           ),
         ),
@@ -2283,27 +2319,35 @@ class _AssetsFab extends StatelessWidget {
             ),
             borderRadius: BorderRadius.circular(30 * scale),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          child: Stack(
             children: [
-              Transform.scale(
-                scaleX: 1.2,
-                child: Text(
-                  '내 자산 확인',
-                  style: _style(
-                    context,
-                    18,
-                    weight: FontWeight.w600,
-                    color: Colors.white,
-                    letterSpacing: -0.45,
+              Positioned.fill(
+                left: 30 * scale,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Transform.scale(
+                    alignment: Alignment.centerLeft,
+                    scaleX: 1.2,
+                    child: Text(
+                      '내 자산 확인',
+                      style: _style(
+                        context,
+                        18,
+                        weight: FontWeight.w600,
+                        color: Colors.white,
+                        letterSpacing: -0.45,
+                      ),
+                    ),
                   ),
                 ),
               ),
-              SizedBox(width: 10 * scale),
-              Icon(
-                Icons.keyboard_double_arrow_down_rounded,
-                size: 29 * scale,
-                color: const Color(0xFF8CCAF7),
+              Positioned(
+                right: 23.5 * scale,
+                top: 12.5 * scale,
+                child: HomeAssetChevrons(
+                  key: const Key('home-assets-chevron-animation'),
+                  scale: scale,
+                ),
               ),
             ],
           ),

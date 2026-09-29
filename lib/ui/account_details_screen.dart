@@ -13,6 +13,14 @@ const _detailsMuted = Colors.black;
 const _detailsSecondary = Colors.black;
 const _detailsGreen = Color(0xFF159757);
 
+// The reference uses Regular for account metadata and transaction details.
+const _detailsReferenceRegular = TextStyle(
+  fontFamily: 'NotoSansKRRegular',
+  fontWeight: FontWeight.w400,
+  fontVariations: [],
+  color: Color(0xFF787878),
+);
+
 enum _HistoryPeriodMode { monthly, range }
 
 enum _HistoryRangePreset { week, month, threeMonths, sixMonths }
@@ -566,10 +574,8 @@ class _AccountIdentity extends StatelessWidget {
                     '$bank $number',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: _detailsMuted,
+                    style: _detailsReferenceRegular.copyWith(
                       fontSize: 22,
-                      fontWeight: FontWeight.w500,
                       height: 1.1,
                       letterSpacing: -0.65,
                     ),
@@ -762,10 +768,9 @@ class _TransactionList extends StatelessWidget {
           child: Text(
             key: const Key('account-history-range'),
             rangeLabel,
-            style: const TextStyle(
-              color: _detailsSecondary,
+            style: _detailsReferenceRegular.copyWith(
+              color: const Color(0xFF555555),
               fontSize: 18.5,
-              fontWeight: FontWeight.w500,
               letterSpacing: -0.55,
             ),
           ),
@@ -2027,10 +2032,9 @@ class _TransactionRow extends StatelessWidget {
               dateTime,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: _detailsSecondary,
+              style: _detailsReferenceRegular.copyWith(
+                color: const Color(0xFF555555),
                 fontSize: 17,
-                fontWeight: FontWeight.w500,
                 letterSpacing: -0.4,
               ),
             ),
@@ -2057,10 +2061,8 @@ class _TransactionRow extends StatelessWidget {
               child: Text(
                 key: Key('account-transaction-balance-$transactionId'),
                 '잔액 $balance',
-                style: const TextStyle(
-                  color: _detailsMuted,
+                style: _detailsReferenceRegular.copyWith(
                   fontSize: 19.5,
-                  fontWeight: FontWeight.w500,
                   letterSpacing: -0.5,
                 ),
               ),

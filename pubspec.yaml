@@ -1,7 +1,7 @@
 name: all_one
 description: "NH올원뱅크 Flutter recreation of the All One home mockups."
 publish_to: 'none'
-version: 1.0.0+3
+version: 1.0.0+4
 
 environment:
   sdk: ^3.8.1
@@ -26,7 +26,12 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/
+    - assets/fonts/OFL-NotoSansKR.txt
   fonts:
+    - family: NotoSansKRRegular
+      fonts:
+        - asset: assets/fonts/NotoSansKR-Regular.otf
+          weight: 400
     - family: NotoSansKRMedium
       fonts:
         - asset: assets/fonts/NotoSansKR-Medium.otf

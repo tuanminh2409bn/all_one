@@ -19,12 +19,15 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  static const _backgroundColor = Color(0xFFF0FFFD);
+  static const _bottomBackgroundColor = Color(0xFF8DC540);
+
   Timer? _timer;
 
   @override
   void initState() {
     super.initState();
-    showDeviceStatusBar(darkIcons: true, backgroundColor: Colors.white);
+    showDeviceStatusBar(darkIcons: true, backgroundColor: _backgroundColor);
     if (widget.autoContinue) {
       _timer = Timer(const Duration(milliseconds: 1600), _continue);
     }
@@ -54,19 +57,22 @@ class _SplashScreenState extends State<SplashScreen> {
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.dark.copyWith(
-        statusBarColor: Colors.white,
-        systemNavigationBarColor: const Color(0xFFF1FCFD),
+        statusBarColor: _backgroundColor,
+        systemNavigationBarColor: _bottomBackgroundColor,
         systemNavigationBarIconBrightness: Brightness.dark,
         systemStatusBarContrastEnforced: false,
         systemNavigationBarContrastEnforced: false,
       ),
       child: GestureDetector(
-        key: const Key('entry-screen-6'),
+        key: const Key('entry-screen-10'),
         behavior: HitTestBehavior.opaque,
         onTap: _continue,
         child: const EntryReferenceCanvas(
-          asset: 'assets/images/entry_6_splash.png',
-          backgroundColor: Color(0xFFF1FCFD),
+          asset: 'assets/images/entry_10_splash.png',
+          backgroundColor: _backgroundColor,
+          referenceSize: Size(1178, 2430),
+          extendBehindBottomSafeArea: true,
+          alignment: Alignment.bottomCenter,
           child: SizedBox.expand(),
         ),
       ),

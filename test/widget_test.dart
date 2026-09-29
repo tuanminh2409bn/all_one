@@ -15,6 +15,7 @@ import 'package:all_one/ui/app_theme.dart';
 import 'package:all_one/ui/bank_logo.dart';
 import 'package:all_one/ui/certificate_login_screen.dart';
 import 'package:all_one/ui/home_screen.dart';
+import 'package:all_one/ui/home_reference_effects.dart';
 import 'package:all_one/ui/limit_release_screen.dart';
 import 'package:all_one/ui/pin_screen.dart';
 import 'package:all_one/ui/splash_screen.dart';
@@ -109,32 +110,25 @@ void main() {
     },
   );
 
-  test('Home benefit strip loops the video frames', () async {
-    final data = await rootBundle.load(
-      'assets/images/home_daily_benefit_loop.png',
-    );
-    expect(
-      String.fromCharCodes([
-        for (var offset = 37; offset < 41; offset++) data.getUint8(offset),
-      ]),
-      'acTL',
-    );
-    expect(data.getUint32(41), 175);
-    expect(data.getUint32(45), 0); // APNG repeats indefinitely.
-    final bytes = data.buffer.asUint8List(
-      data.offsetInBytes,
-      data.lengthInBytes,
-    );
-    final codec = await ui.instantiateImageCodec(bytes);
-
-    expect(codec.frameCount, 175);
-    final firstFrame = await codec.getNextFrame();
-    expect(firstFrame.duration, const Duration(milliseconds: 50));
-    expect(firstFrame.image.width, 410);
-    expect(firstFrame.image.height, 70);
-
-    firstFrame.image.dispose();
-    codec.dispose();
+  test('Home icons preserve source resolution and 2.5-second cycles', () async {
+    for (final icon in ['point', 'bag', 'fire']) {
+      final data = await rootBundle.load(
+        'assets/images/home_benefit_$icon.png',
+      );
+      final codec = await ui.instantiateImageCodec(data.buffer.asUint8List());
+      expect(codec.frameCount, greaterThan(60));
+      expect(codec.repetitionCount, -1);
+      var duration = Duration.zero;
+      for (var index = 0; index < codec.frameCount; index++) {
+        final frame = await codec.getNextFrame();
+        expect(frame.image.width, 140);
+        expect(frame.image.height, 140);
+        duration += frame.duration;
+        frame.image.dispose();
+      }
+      expect(duration, const Duration(milliseconds: 2500));
+      codec.dispose();
+    }
   });
 
   test(
@@ -196,17 +190,17 @@ void main() {
     },
   );
 
-  testWidgets('entry flow starts at reference screen 6', (tester) async {
+  testWidgets('entry flow starts at reference screen 10', (tester) async {
     _configureMockupViewport(tester);
     await tester.pumpWidget(
       MaterialApp(home: SplashScreen(auth: AuthService(), autoContinue: false)),
     );
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('entry-screen-6')), findsOneWidget);
+    expect(find.byKey(const Key('entry-screen-10')), findsOneWidget);
     expect(
       find.byKey(
-        const ValueKey('entry-reference-assets/images/entry_6_splash.png'),
+        const ValueKey('entry-reference-assets/images/entry_10_splash.png'),
       ),
       findsOneWidget,
     );
@@ -376,25 +370,44 @@ void main() {
     expect(find.byType(HomeScreen), findsOneWidget);
     expect(find.byKey(const Key('home-top-reference')), findsNothing);
     expect(find.byKey(const Key('home-bottom-navigation')), findsOneWidget);
-    final benefitAnimation = tester.widget<Image>(
-      find.byKey(const Key('home-daily-benefit-animation')),
-    );
     expect(
-      (benefitAnimation.image as AssetImage).assetName,
-      'assets/images/home_daily_benefit_loop.png',
+      find.byKey(const Key('home-daily-benefit-animation')),
+      findsOneWidget,
     );
+    expect(find.byType(HomeBenefitStrip), findsOneWidget);
+    expect(find.byType(HomeAssetChevrons), findsOneWidget);
     final accountLogo = find.byKey(const Key('home-account-logo'));
     expect(tester.getSize(accountLogo), const Size.square(48));
     expect(
       tester.widget<ClipRRect>(accountLogo).borderRadius,
       BorderRadius.circular(14),
     );
-    expect(find.text('매일 포인트 용돈 받기'), findsNothing);
+    expect(find.text('매일 포인트 용돈 받기'), findsOneWidget);
     expect(find.text('쓸수록 혜택받기'), findsNothing);
     expect(
       tester.getSize(find.byKey(const Key('home-fortune-chip'))),
-      const Size(124, 55),
+      const Size(114, 51),
     );
+    expect(
+      tester.widget<Text>(find.text('오늘 운세')).style?.decoration,
+      TextDecoration.underline,
+    );
+    expect(
+      tester.widget<Text>(find.text('오늘 운세')).style?.decorationThickness,
+      1.5,
+    );
+    expect(
+      tester
+          .widget<Text>(find.byKey(const Key('home-account-number')))
+          .style
+          ?.color,
+      const Color(0xFF787878),
+    );
+    final homeCopy = tester.widget<Text>(
+      find.byKey(const Key('home-account-copy')),
+    );
+    expect(homeCopy.style?.color, const Color(0xFF555555));
+    expect(homeCopy.style?.decoration, TextDecoration.underline);
     expect(
       tester.getCenter(find.byKey(const ValueKey('home-nav-home'))).dx,
       closeTo(75.6, 0.1),
@@ -619,7 +632,10 @@ void main() {
     final accountNumber = find.byKey(const Key('account-number-text'));
     expect(tester.widget<Text>(title).style?.color, Colors.black);
     expect(tester.widget<Text>(accountType).style?.color, Colors.black);
-    expect(tester.widget<Text>(accountNumber).style?.color, Colors.black);
+    expect(
+      tester.widget<Text>(accountNumber).style?.color,
+      const Color(0xFF787878),
+    );
     expect(
       tester.widget<Text>(find.text('1개월 · 전체 · 최신순')).style?.color,
       Colors.black,
@@ -711,8 +727,23 @@ void main() {
     expect(timestamp, findsOneWidget);
     final text = tester.widget<Text>(timestamp);
     expect(text.style?.fontSize, 17);
-    expect(text.style?.fontWeight, FontWeight.w500);
-    expect(text.style?.color, Colors.black);
+    expect(text.style?.fontWeight, FontWeight.w400);
+    expect(text.style?.color, const Color(0xFF555555));
+    final range = tester.widget<Text>(
+      find.byKey(const Key('account-history-range')),
+    );
+    expect(range.style?.color, const Color(0xFF555555));
+    for (final key in [
+      'account-number-text',
+      'account-history-range',
+      'account-transaction-time-seed-transaction-0',
+      'account-transaction-balance-seed-transaction-0',
+    ]) {
+      final style = tester.widget<Text>(find.byKey(Key(key))).style!;
+      expect(style.fontFamily, 'NotoSansKRRegular');
+      expect(style.fontWeight, FontWeight.w400);
+      expect(style.fontVariations, isEmpty);
+    }
     expect(
       tester
           .widget<Text>(
@@ -722,7 +753,7 @@ void main() {
           )
           .style
           ?.color,
-      Colors.black,
+      const Color(0xFF787878),
     );
     expect(
       tester.widget<Text>(find.text('TRINHTRUNGMINH')).style?.color,
@@ -1962,6 +1993,10 @@ class _TestHost extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: buildAllOneTheme(),
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(disableAnimations: true),
+        child: child!,
+      ),
       home: home,
     );
   }

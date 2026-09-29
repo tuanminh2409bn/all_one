@@ -24,6 +24,9 @@ void main() {
   });
 
   setUpAll(() async {
+    final regular = FontLoader('NotoSansKRRegular')
+      ..addFont(rootBundle.load('assets/fonts/NotoSansKR-Regular.otf'));
+    await regular.load();
     final loader = FontLoader('NotoSansKRMedium')
       ..addFont(rootBundle.load('assets/fonts/NotoSansKR-Medium.otf'))
       ..addFont(rootBundle.load('assets/fonts/NotoSansCJKkr-Bold.otf'));
@@ -40,7 +43,7 @@ void main() {
     await tester.pumpWidget(
       _host(SplashScreen(auth: auth, autoContinue: false)),
     );
-    await _precache(tester, const ['assets/images/entry_6_splash.png']);
+    await _precache(tester, const ['assets/images/entry_10_splash.png']);
     await tester.pumpAndSettle();
     await expectLater(
       find.byType(MaterialApp),
@@ -48,12 +51,9 @@ void main() {
     );
   });
 
-  testWidgets('export entry, home checkpoints, and login sheet', (
-    tester,
-  ) async {
+  testWidgets('export entry and PIN checkpoints', (tester) async {
     _configureMockupViewport(tester);
     final auth = AuthService();
-    final store = AppDataStore.inMemory(withMockData: false);
 
     await tester.pumpWidget(
       _host(CertificateLoginScreen(auth: auth, autoContinue: false)),
@@ -72,6 +72,13 @@ void main() {
       find.byType(MaterialApp),
       matchesGoldenFile('goldens/preview_0b_pin.png'),
     );
+  });
+
+  testWidgets('export home checkpoints and login sheet', (tester) async {
+    _configureMockupViewport(tester);
+    final auth = AuthService();
+    final store = AppDataStore.inMemory(withMockData: false);
+    addTearDown(store.dispose);
 
     await tester.pumpWidget(
       _homeHost(
@@ -185,50 +192,74 @@ void main() {
       id: 'home-comparison-account',
       bankCode: '농협',
       bankDisplayName: 'NH농협은행',
-      ownerName: 'BUI PHUONG',
+      ownerName: 'TRAN MANH',
       accountNumber: '302-2180-4371-91',
       accountType: 'NH올원모임통장',
       openingBalance: 0,
       createdAt: DateTime(2026, 9, 18),
     );
 
-    await tester.pumpWidget(
-      _homeHost(
-        NativeHomeView(
-          scrollController: scrollController,
-          benefitsKey: GlobalKey(),
-          assetsKey: GlobalKey(),
-          accountName: 'BUI PHUONG',
-          account: account,
-          balanceLabel: '0원',
-          netAssetsLabel: '0원',
-          spendingLabel: '0원',
-          scheduledLabel: '0원',
-          hideAmounts: false,
-          largeText: false,
-          nhSelected: true,
-          onAccountTap: () {},
-          onToggleLargeText: () {},
-          onMenuTap: () {},
-          onSelectNh: () {},
-          onSelectOther: () {},
-          onLimitRelease: () {},
-          onOpenDetails: () {},
-          onTransfer: () {},
-          onCopyAccount: () {},
-          onToggleHide: () {},
-          onAccounts: () {},
-          onAllAccounts: () {},
-          onScrollToAssets: () {},
-        ),
+    Widget signedInHome(String name) => _homeHost(
+      NativeHomeView(
+        scrollController: scrollController,
+        benefitsKey: GlobalKey(),
+        assetsKey: GlobalKey(),
+        accountName: name,
+        account: account,
+        balanceLabel: '0원',
+        netAssetsLabel: '0원',
+        spendingLabel: '0원',
+        scheduledLabel: '0원',
+        hideAmounts: false,
+        largeText: false,
+        nhSelected: true,
+        onAccountTap: () {},
+        onToggleLargeText: () {},
+        onMenuTap: () {},
+        onSelectNh: () {},
+        onSelectOther: () {},
+        onLimitRelease: () {},
+        onOpenDetails: () {},
+        onTransfer: () {},
+        onCopyAccount: () {},
+        onToggleHide: () {},
+        onAccounts: () {},
+        onAllAccounts: () {},
+        onScrollToAssets: () {},
       ),
     );
+
+    await tester.pumpWidget(signedInHome('TRAN MANH'));
     await _precache(tester, _homeAssets);
     await tester.pumpAndSettle();
+    final name = tester.widget<Text>(
+      find.byKey(const Key('home-account-name-text')),
+    );
+    final ellipsis = tester.widget<Text>(
+      find.byKey(const Key('home-account-name-ellipsis')),
+    );
+    expect(name.data, 'TRAN MANH');
+    expect(name.style?.decoration, TextDecoration.underline);
+    expect(ellipsis.data, '...');
+    expect(ellipsis.style?.decoration, isNot(TextDecoration.underline));
+    expect(
+      tester.getTopLeft(find.byKey(const Key('home-account-name-ellipsis'))).dx,
+      closeTo(
+        tester.getTopRight(find.byKey(const Key('home-account-name-text'))).dx +
+            1,
+        0.1,
+      ),
+    );
     await expectLater(
       find.byType(MaterialApp),
       matchesGoldenFile('goldens/preview_15_home_comparison.png'),
     );
+
+    await tester.pumpWidget(signedInHome('DOAN VAN THANH NGUYEN'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('home-account-name-ellipsis')), findsOneWidget);
+    expect(find.text('님'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('export limit release top and scrolled checkpoints', (
@@ -888,6 +919,7 @@ Future<AppDataStore> _transactionHistoryStore() async {
 }
 
 const _homeAssets = <String>[
+  'assets/images/home_benefit_point_still.png',
   'assets/images/home_event_gift.png',
   'assets/images/ref_header_actions.png',
   'assets/images/ref_daily_point.png',
@@ -972,6 +1004,10 @@ Widget _host(Widget home) {
   return MaterialApp(
     debugShowCheckedModeBanner: false,
     theme: buildAllOneTheme(),
+    builder: (context, child) => MediaQuery(
+      data: MediaQuery.of(context).copyWith(disableAnimations: true),
+      child: child!,
+    ),
     home: home,
   );
 }
@@ -1006,6 +1042,7 @@ Widget _homeHost(Widget home) {
         const systemInsets = EdgeInsets.only(top: 54, bottom: 68);
         return MediaQuery(
           data: mediaQuery.copyWith(
+            disableAnimations: true,
             padding: systemInsets,
             viewPadding: systemInsets,
           ),
